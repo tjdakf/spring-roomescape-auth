@@ -82,13 +82,14 @@
 ## 구현할 기능 목록
 
 ### 회원가입
-- [ ] 회원 도메인과 메모리 저장소를 추가
+- [x] 회원 도메인과 메모리 저장소를 추가
   - `Member`는 `memberId`, `loginId`, `password`, `name`을 가짐
   - `memberId`는 내부 식별자, `loginId`는 로그인 ID로 구분
   - `MemberRepository` 인터페이스 도입
   - `MemoryMemberRepository`로 구현
   - `Member` 저장 기능 추가
   - `loginId`로 회원 조회 기능 추가
+  - `memberId`로 회원 조회 기능 추가
 
 - [ ] 회원가입 서비스를 추가
   - 회원가입 요청 값으로 `loginId`, `password`, `name`을 받음
