@@ -6,6 +6,7 @@ import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
+import roomescape.auth.SessionConstants;
 import roomescape.domain.member.Member;
 import roomescape.exception.ErrorCode;
 import roomescape.exception.RoomescapeException;
@@ -38,9 +39,9 @@ class AuthControllerTest {
                                   "loginId": "gugu",
                                   "password": "password"
                                 }
-                                """))
+                """))
                 .andExpect(status().isOk())
-                .andExpect(request().sessionAttribute("loginMemberId", 1L));
+                .andExpect(request().sessionAttribute(SessionConstants.LOGIN_MEMBER_ID, 1L));
     }
 
     @Test
@@ -82,7 +83,7 @@ class AuthControllerTest {
                 .thenReturn(new Member(1L, "gugu", "password", "구구"));
 
         mockMvc.perform(get("/me")
-                        .sessionAttr("loginMemberId", 1L))
+                        .sessionAttr(SessionConstants.LOGIN_MEMBER_ID, 1L))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.name").value("구구"));
     }
@@ -99,9 +100,9 @@ class AuthControllerTest {
     @Test
     void 로그아웃을_한다() throws Exception {
         mockMvc.perform(post("/logout")
-                        .sessionAttr("loginMemberId", 1L))
+                        .sessionAttr(SessionConstants.LOGIN_MEMBER_ID, 1L))
                 .andExpect(status().isNoContent())
-                .andExpect(request().sessionAttributeDoesNotExist("loginMemberId"));
+                .andExpect(request().sessionAttributeDoesNotExist(SessionConstants.LOGIN_MEMBER_ID));
     }
 
     @Test

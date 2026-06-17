@@ -160,9 +160,9 @@
   - 인증이 필요한 경로와 허용 경로를 구분
   - 로그인, 회원가입, 공개 조회 API, 정적 리소스는 비로그인 허용
 
-- [ ] 현재 로그인 사용자 ArgumentResolver 추가
+- [x] 현재 로그인 사용자 ArgumentResolver 추가
   - `@LoginMember` 애노테이션 도입
-  - 세션의 `loginMemberId`로 `Member` 조회
+  - 세션의 `loginMemberId`를 `LoginMemberInfo`로 전달
   - 컨트롤러에서 세션을 직접 조회하지 않도록 변경
 
 ### 예약/대기 로그인 사용자 연결

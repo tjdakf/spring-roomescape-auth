@@ -8,12 +8,12 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
+import roomescape.auth.LoginMember;
+import roomescape.auth.LoginMemberInfo;
 import roomescape.auth.SessionConstants;
 import roomescape.controller.dto.request.LoginRequest;
 import roomescape.controller.dto.response.LoginMemberResponse;
 import roomescape.domain.member.Member;
-import roomescape.exception.ErrorCode;
-import roomescape.exception.RoomescapeException;
 import roomescape.service.AuthService;
 
 @RestController
@@ -37,14 +37,8 @@ public class AuthController {
     }
 
     @GetMapping("/me")
-    public ResponseEntity<LoginMemberResponse> getLoginMember(HttpServletRequest httpServletRequest) {
-        HttpSession session = httpServletRequest.getSession(false);
-        if (session == null || session.getAttribute(SessionConstants.LOGIN_MEMBER_ID) == null) {
-            throw new RoomescapeException(ErrorCode.UNAUTHORIZED);
-        }
-
-        Long memberId = (Long) session.getAttribute(SessionConstants.LOGIN_MEMBER_ID);
-        Member member = authService.findLoginMember(memberId);
+    public ResponseEntity<LoginMemberResponse> getLoginMember(@LoginMember LoginMemberInfo loginMemberInfo) {
+        Member member = authService.findLoginMember(loginMemberInfo.memberId());
         return ResponseEntity.ok(LoginMemberResponse.from(member));
     }
 
