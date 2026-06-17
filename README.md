@@ -2,6 +2,9 @@
 | 기능              | 메서드 / URL                                      | 요청                               | 응답                                                           | 상태 코드 |
 |-----------------|------------------------------------------------|----------------------------------|--------------------------------------------------------------|-------|
 | 회원가입           | POST `/members`                                | `{loginId, password, name}`      | `{loginId}`                                                   | 201   |
+| 로그인             | POST `/login`                                  | `{loginId, password}`            | —                                                            | 200   |
+| 현재 로그인 사용자 조회 | GET `/me`                                      | —                                | `{name}`                                                     | 200   |
+| 로그아웃            | POST `/logout`                                 | —                                | —                                                            | 204   |
 | 사용자 예약 등록       | POST `/reservations`                           | `{name, date, timeId, themeId}`  | `{id, name, date, time: {id, startAt}, theme: {id, name}}`   | 201   |
 | 사용자 본인 예약 조회    | GET `/reservations?name=브라운`                 | —                                | `[{id, name, date, time: {id, startAt}, theme: {id, name}}, ...]` | 200   |
 | 사용자 본인 예약 상태 조회 | GET `/reservation-statuses?name=브라운`         | —                                | `[{id, name, date, time: {id, startAt}, theme: {id, name}, status, turn}, ...]` | 200   |
@@ -65,6 +68,8 @@
 | PAST_SCHEDULE | 이미 지난 시간으로는 예약 대기를 신청할 수 없습니다. | 400 | 사용자가 지난 날짜·시간으로 예약 대기 생성을 요청함 |
 | FORBIDDEN_RESOURCE | 본인의 예약만 변경하거나 취소할 수 있습니다. | 403 | 예약은 존재하지만 요청 이름과 예약 이름이 일치하지 않음 |
 | FORBIDDEN_RESOURCE | 본인의 예약 대기만 취소할 수 있습니다. | 403 | 예약 대기는 존재하지만 요청 이름과 예약 대기 이름이 일치하지 않음 |
+| UNAUTHORIZED | 인증에 실패했습니다. | 401 | 로그인하지 않은 사용자가 현재 로그인 사용자 조회를 요청함 |
+| UNAUTHORIZED | 아이디 또는 비밀번호가 올바르지 않습니다. | 401 | 로그인 ID가 존재하지 않거나 비밀번호가 일치하지 않음 |
 | NOT_FOUND | 존재하지 않는 예약 시간입니다. | 404 | 존재하지 않는 예약 시간 ID로 요청함 |
 | NOT_FOUND | 존재하지 않는 시간입니다. | 404 | 존재하지 않는 예약 시간 ID로 예약 대기 생성을 요청함 |
 | NOT_FOUND | 존재하지 않는 테마입니다. | 404 | 존재하지 않는 테마 ID로 요청함 |
@@ -129,7 +134,7 @@
   - `GET /me` 요청을 받음
   - 세션의 `loginMemberId`로 현재 로그인 사용자를 조회
   - 로그인 상태이면 사용자 정보 반환
-  - 응답 DTO로 `loginId`, `name`을 반환
+  - 응답 DTO로 `name`을 반환
   - 로그인 상태가 아니면 `401 Unauthorized` 반환
   - 홈 화면에서는 이 API를 통해 로그인 여부를 판단할 수 있음
 
@@ -141,9 +146,25 @@
   - 성공 시 `204 No Content` 반환
 
 ### 예외 처리
-- [ ] 회원/인증 예외 응답 정리
+- [x] 회원/인증 예외 응답 정리
   - 중복 `loginId` 예외 추가
   - 로그인 실패 예외 추가
   - 로그인 실패는 `401 Unauthorized`로 응답
   - 중복 `loginId`는 `409 Conflict`로 응답
   - 기존 `GlobalExceptionHandler` 응답 형식과 맞춤
+
+### 인증 공통 처리
+- [ ] 로그인 여부 확인 Interceptor를 추가
+  - 세션의 `loginMemberId` 존재 여부를 확인
+  - 인증되지 않은 요청은 `401 Unauthorized`
+  - 인증이 필요한 경로와 허용 경로를 구분
+
+- [ ] 현재 로그인 사용자 ArgumentResolver를 추가
+  - `@LoginMember` 애노테이션 도입
+  - 세션의 `loginMemberId`로 `Member` 조회
+  - 컨트롤러에서 세션을 직접 조회하지 않도록 변경
+
+### 예약/대기 로그인 사용자 연결
+- [ ] 예약 생성 시 요청의 `name` 대신 로그인 사용자의 `name` 사용
+- [ ] 내 예약/대기 조회 시 요청의 `name` 대신 로그인 사용자의 `name` 사용
+- [ ] 예약/대기 취소·변경 시 로그인 사용자의 `name` 기준으로 권한 확인
