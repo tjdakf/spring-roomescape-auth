@@ -5,6 +5,7 @@ import org.springframework.http.HttpStatus;
 public enum ErrorCode {
 
     INVALID_INPUT(HttpStatus.BAD_REQUEST, "요청 값이 올바르지 않습니다."),
+    UNAUTHORIZED(HttpStatus.UNAUTHORIZED, "인증에 실패했습니다."),
     PAST_SCHEDULE(HttpStatus.BAD_REQUEST, "이미 지난 시간입니다."),
     PAST_RESOURCE_LOCKED(HttpStatus.CONFLICT, "이미 지난 리소스는 변경하거나 취소할 수 없습니다."),
     FORBIDDEN_RESOURCE(HttpStatus.FORBIDDEN, "접근 권한이 없는 리소스입니다."),
