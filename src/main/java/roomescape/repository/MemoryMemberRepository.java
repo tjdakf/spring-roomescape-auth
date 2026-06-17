@@ -2,6 +2,7 @@ package roomescape.repository;
 
 import roomescape.domain.member.Member;
 import roomescape.domain.member.MemberRepository;
+import roomescape.domain.member.Role;
 
 import java.util.Comparator;
 import java.util.List;
@@ -40,6 +41,14 @@ public class MemoryMemberRepository implements MemberRepository {
         return members.values().stream()
                 .filter(member -> member.getLoginId().equals(loginId))
                 .findAny();
+    }
+
+    @Override
+    public void updateRole(Long memberId, Role role) {
+        Member member = members.get(memberId);
+        if (member != null) {
+            members.put(memberId, member.withRole(role));
+        }
     }
 
     private Long resolveMemberId(Member member) {

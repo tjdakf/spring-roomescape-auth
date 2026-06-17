@@ -62,6 +62,10 @@ public class Member {
         return new Member(memberId, loginId, password, name, role);
     }
 
+    public Member withRole(Role role) {
+        return new Member(memberId, loginId, password, name, role);
+    }
+
     private void validateRequired(String value, String fieldName) {
         if (value == null || value.isBlank()) {
             throw new IllegalArgumentException(fieldName + subjectParticle(fieldName) + " 비어 있을 수 없습니다.");

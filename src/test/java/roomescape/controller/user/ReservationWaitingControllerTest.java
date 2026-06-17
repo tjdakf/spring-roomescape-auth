@@ -10,6 +10,7 @@ import org.springframework.test.web.servlet.request.RequestPostProcessor;
 import roomescape.auth.SessionConstants;
 import roomescape.domain.*;
 import roomescape.domain.member.Member;
+import roomescape.domain.member.Role;
 import roomescape.service.AuthService;
 import roomescape.service.ReservationWaitingService;
 
@@ -71,6 +72,23 @@ class ReservationWaitingControllerTest {
                 eq(1L),
                 eq(1L),
                 any(LocalDateTime.class));
+        verify(authService, times(1)).findLoginMember(1L);
+        verifyNoMoreInteractions(reservationWaitingService, authService);
+    }
+
+    @Test
+    void 관리자나_매니저는_사용자_예약_대기를_생성할_수_없다() throws Exception {
+        given(authService.findLoginMember(1L))
+                .willReturn(new Member(1L, "admin", "password", "관리자", Role.ADMIN));
+
+        mockMvc.perform(post("/waitings")
+                        .with(loginMember())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(validRequest()))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code").value("FORBIDDEN_RESOURCE"))
+                .andExpect(jsonPath("$.detail").value("관리자 또는 매니저는 사용자 예약을 신청할 수 없습니다."));
+
         verify(authService, times(1)).findLoginMember(1L);
         verifyNoMoreInteractions(reservationWaitingService, authService);
     }

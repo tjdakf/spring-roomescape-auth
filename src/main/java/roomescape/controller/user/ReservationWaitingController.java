@@ -11,6 +11,8 @@ import roomescape.controller.dto.request.ReservationWaitingRequest;
 import roomescape.controller.dto.response.ReservationWaitingResponse;
 import roomescape.domain.member.Member;
 import roomescape.domain.WaitingWithTurn;
+import roomescape.exception.ErrorCode;
+import roomescape.exception.RoomescapeException;
 import roomescape.service.AuthService;
 import roomescape.service.ReservationWaitingService;
 
@@ -37,6 +39,7 @@ public class ReservationWaitingController {
             @Valid @RequestBody ReservationWaitingRequest request
     ) {
         Member member = authService.findLoginMember(loginMemberInfo.memberId());
+        validateUserReservable(member);
         WaitingWithTurn waitingWithTurn = service.create(
                 member.getMemberId(),
                 member.getName(),
@@ -47,6 +50,12 @@ public class ReservationWaitingController {
         );
         return ResponseEntity.created(URI.create("/waitings/" + waitingWithTurn.waiting().getId()))
                 .body(ReservationWaitingResponse.from(waitingWithTurn));
+    }
+
+    private void validateUserReservable(Member member) {
+        if (member.getRole().canAccessAdmin()) {
+            throw new RoomescapeException(ErrorCode.FORBIDDEN_RESOURCE, "관리자 또는 매니저는 사용자 예약을 신청할 수 없습니다.");
+        }
     }
 
     @GetMapping

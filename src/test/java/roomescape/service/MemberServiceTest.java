@@ -5,6 +5,7 @@ import org.mockito.ArgumentCaptor;
 import org.springframework.dao.DuplicateKeyException;
 import roomescape.domain.member.Member;
 import roomescape.domain.member.MemberRepository;
+import roomescape.domain.member.Role;
 import roomescape.exception.ErrorCode;
 import roomescape.exception.RoomescapeException;
 
@@ -89,5 +90,49 @@ class MemberServiceTest {
         verify(memberRepository, times(1)).findByLoginId(loginId);
         verify(memberRepository, times(1)).insert(any(Member.class));
         verifyNoMoreInteractions(memberRepository);
+    }
+
+    @Test
+    void 관리자가_회원을_승격한다() {
+        // given
+        Member admin = new Member(1L, "admin", "password", "관리자", Role.ADMIN);
+        Member target = new Member(2L, "gugu", "password", "구구", Role.USER);
+        when(memberRepository.findByMemberId(1L)).thenReturn(Optional.of(admin));
+        when(memberRepository.findByMemberId(2L)).thenReturn(Optional.of(target));
+
+        // when
+        Member result = memberService.changeRole(1L, 2L, Role.MANAGER);
+
+        // then
+        assertThat(result.getRole()).isEqualTo(Role.MANAGER);
+        verify(memberRepository, times(1)).updateRole(2L, Role.MANAGER);
+    }
+
+    @Test
+    void 관리자가_아니면_등급을_변경할_수_없다() {
+        // given
+        Member manager = new Member(1L, "manager", "password", "매니저", Role.MANAGER);
+        when(memberRepository.findByMemberId(1L)).thenReturn(Optional.of(manager));
+
+        // when & then
+        assertThatThrownBy(() -> memberService.changeRole(1L, 2L, Role.MANAGER))
+                .isInstanceOf(RoomescapeException.class)
+                .hasFieldOrPropertyWithValue("errorCode", ErrorCode.FORBIDDEN_RESOURCE);
+
+        verify(memberRepository, never()).updateRole(any(), any());
+    }
+
+    @Test
+    void ADMIN_권한은_부여할_수_없다() {
+        // given
+        Member admin = new Member(1L, "admin", "password", "관리자", Role.ADMIN);
+        when(memberRepository.findByMemberId(1L)).thenReturn(Optional.of(admin));
+
+        // when & then
+        assertThatThrownBy(() -> memberService.changeRole(1L, 2L, Role.ADMIN))
+                .isInstanceOf(RoomescapeException.class)
+                .hasFieldOrPropertyWithValue("errorCode", ErrorCode.INVALID_INPUT);
+
+        verify(memberRepository, never()).updateRole(any(), any());
     }
 }

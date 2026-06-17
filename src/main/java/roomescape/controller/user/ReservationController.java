@@ -12,6 +12,8 @@ import roomescape.controller.dto.request.ReservationUpdateRequest;
 import roomescape.controller.dto.response.ReservationResponse;
 import roomescape.domain.Reservation;
 import roomescape.domain.member.Member;
+import roomescape.exception.ErrorCode;
+import roomescape.exception.RoomescapeException;
 import roomescape.service.AuthService;
 import roomescape.service.ReservationService;
 
@@ -38,6 +40,7 @@ public class ReservationController {
             @Valid @RequestBody ReservationRequest request
     ) {
         Member member = authService.findLoginMember(loginMemberInfo.memberId());
+        validateUserReservable(member);
         Reservation reservation = service.createByUser(
                 member.getMemberId(),
                 member.getName(),
@@ -47,6 +50,12 @@ public class ReservationController {
                 LocalDateTime.now());
         return ResponseEntity.created(URI.create("/reservations/" + reservation.getId()))
                 .body(ReservationResponse.from(reservation));
+    }
+
+    private void validateUserReservable(Member member) {
+        if (member.getRole().canAccessAdmin()) {
+            throw new RoomescapeException(ErrorCode.FORBIDDEN_RESOURCE, "관리자 또는 매니저는 사용자 예약을 신청할 수 없습니다.");
+        }
     }
 
     @GetMapping

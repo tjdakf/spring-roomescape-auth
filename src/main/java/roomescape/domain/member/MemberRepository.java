@@ -12,4 +12,6 @@ public interface MemberRepository {
     Optional<Member> findByMemberId(Long memberId);
 
     Optional<Member> findByLoginId(String loginId);
+
+    void updateRole(Long memberId, Role role);
 }

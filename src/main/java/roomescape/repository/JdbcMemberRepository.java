@@ -66,4 +66,9 @@ public class JdbcMemberRepository implements MemberRepository {
         List<Member> result = jdbcTemplate.query(sql, memberRowMapper, loginId);
         return result.stream().findAny();
     }
+
+    @Override
+    public void updateRole(Long memberId, Role role) {
+        jdbcTemplate.update("UPDATE member SET role = ? WHERE id = ?;", role.name(), memberId);
+    }
 }

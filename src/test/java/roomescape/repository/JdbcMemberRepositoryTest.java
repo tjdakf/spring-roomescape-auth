@@ -7,6 +7,7 @@ import org.springframework.boot.test.autoconfigure.jdbc.JdbcTest;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import roomescape.domain.member.Member;
+import roomescape.domain.member.Role;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -73,5 +74,15 @@ class JdbcMemberRepositoryTest {
 
         assertThatThrownBy(() -> memberRepository.insert(new Member(null, "gugu", "password", "다른이름")))
                 .isInstanceOf(DuplicateKeyException.class);
+    }
+
+    @Test
+    void 회원_등급을_변경한다() {
+        Member saved = memberRepository.insert(new Member(null, "gugu", "password", "구구"));
+
+        memberRepository.updateRole(saved.getMemberId(), Role.MANAGER);
+
+        assertThat(memberRepository.findByMemberId(saved.getMemberId()).get().getRole())
+                .isEqualTo(Role.MANAGER);
     }
 }

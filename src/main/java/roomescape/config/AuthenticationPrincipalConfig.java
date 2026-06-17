@@ -4,7 +4,8 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.web.method.support.HandlerMethodArgumentResolver;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
-import roomescape.auth.AdminAuthInterceptor;
+import roomescape.auth.AdminApiAuthInterceptor;
+import roomescape.auth.AdminPageAuthInterceptor;
 import roomescape.auth.LoginCheckInterceptor;
 import roomescape.auth.LoginMemberArgumentResolver;
 
@@ -25,8 +26,12 @@ public class AuthenticationPrincipalConfig implements WebMvcConfigurer {
                         "/reservation-statuses/**"
                 );
 
-        registry.addInterceptor(new AdminAuthInterceptor())
-                .addPathPatterns("/admin/**");
+        registry.addInterceptor(new AdminApiAuthInterceptor())
+                .addPathPatterns("/admin/**")
+                .excludePathPatterns("/admin", "/admin/reservation", "/admin/time", "/admin/theme", "/admin/member", "/admin/login");
+
+        registry.addInterceptor(new AdminPageAuthInterceptor())
+                .addPathPatterns("/admin", "/admin/reservation", "/admin/time", "/admin/theme", "/admin/member");
     }
 
     @Override

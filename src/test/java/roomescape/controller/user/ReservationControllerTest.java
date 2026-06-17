@@ -15,6 +15,7 @@ import roomescape.domain.ReservationSlot;
 import roomescape.domain.ReservationTime;
 import roomescape.domain.Theme;
 import roomescape.domain.member.Member;
+import roomescape.domain.member.Role;
 import roomescape.service.AuthService;
 import roomescape.service.ReservationService;
 
@@ -76,6 +77,23 @@ class ReservationControllerTest {
                 eq(1L),
                 eq(1L),
                 any(LocalDateTime.class));
+        verify(authService, times(1)).findLoginMember(1L);
+        verifyNoMoreInteractions(reservationService, authService);
+    }
+
+    @Test
+    void 관리자나_매니저는_사용자_예약을_생성할_수_없다() throws Exception {
+        given(authService.findLoginMember(1L))
+                .willReturn(new Member(1L, "manager", "password", "매니저", Role.MANAGER));
+
+        mockMvc.perform(post("/reservations")
+                        .with(loginMember())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(validRequest()))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code").value("FORBIDDEN_RESOURCE"))
+                .andExpect(jsonPath("$.detail").value("관리자 또는 매니저는 사용자 예약을 신청할 수 없습니다."));
+
         verify(authService, times(1)).findLoginMember(1L);
         verifyNoMoreInteractions(reservationService, authService);
     }

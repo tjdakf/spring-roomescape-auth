@@ -3,6 +3,7 @@ package roomescape.repository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import roomescape.domain.member.Member;
+import roomescape.domain.member.Role;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -48,5 +49,15 @@ class MemoryMemberRepositoryTest {
     @Test
     void 존재하지_않는_loginId로_조회하면_빈_값을_반환한다() {
         assertThat(memberRepository.findByLoginId("unknown")).isEmpty();
+    }
+
+    @Test
+    void 회원_등급을_변경한다() {
+        Member saved = memberRepository.insert(new Member(null, "gugu", "password", "구구"));
+
+        memberRepository.updateRole(saved.getMemberId(), Role.MANAGER);
+
+        assertThat(memberRepository.findByMemberId(saved.getMemberId()).get().getRole())
+                .isEqualTo(Role.MANAGER);
     }
 }
