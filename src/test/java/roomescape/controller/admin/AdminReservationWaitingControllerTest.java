@@ -5,6 +5,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
+import roomescape.auth.SessionConstants;
+import roomescape.domain.member.Role;
 import roomescape.service.ReservationWaitingService;
 
 import static org.mockito.Mockito.*;
@@ -23,7 +25,7 @@ class AdminReservationWaitingControllerTest {
 
     @Test
     void 관리자_예약_대기를_삭제한다() throws Exception {
-        mockMvc.perform(delete("/admin/waitings/1"))
+        mockMvc.perform(delete("/admin/waitings/1").sessionAttr(SessionConstants.LOGIN_MEMBER_ID, 1L).sessionAttr(SessionConstants.LOGIN_MEMBER_ROLE, Role.ADMIN))
                 .andExpect(status().isNoContent());
 
         verify(reservationWaitingService, times(1)).deleteByAdmin(1L);
@@ -32,7 +34,7 @@ class AdminReservationWaitingControllerTest {
 
     @Test
     void 삭제_id가_양수가_아니면_에러_응답() throws Exception {
-        mockMvc.perform(delete("/admin/waitings/0"))
+        mockMvc.perform(delete("/admin/waitings/0").sessionAttr(SessionConstants.LOGIN_MEMBER_ID, 1L).sessionAttr(SessionConstants.LOGIN_MEMBER_ROLE, Role.ADMIN))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.code").value("INVALID_INPUT"))
                 .andExpect(jsonPath("$.detail").value("id는 양수이어야 합니다."));

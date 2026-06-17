@@ -5,6 +5,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
+import roomescape.auth.SessionConstants;
+import roomescape.domain.member.Role;
 import roomescape.domain.ReservationTime;
 import roomescape.domain.Theme;
 import roomescape.service.ReservationLookupService;
@@ -39,7 +41,7 @@ class AdminReservationStatusControllerTest {
         given(reservationLookupService.findByDateRange(eq(startDate), eq(endDate)))
                 .willReturn(List.of(reservedStatus(), waitingStatus()));
 
-        mockMvc.perform(get("/admin/reservation-statuses")
+        mockMvc.perform(get("/admin/reservation-statuses").sessionAttr(SessionConstants.LOGIN_MEMBER_ID, 1L).sessionAttr(SessionConstants.LOGIN_MEMBER_ROLE, Role.ADMIN)
                         .param("startDate", "2023-08-01")
                         .param("endDate", "2023-08-31"))
                 .andExpect(status().isOk())
@@ -62,7 +64,7 @@ class AdminReservationStatusControllerTest {
 
     @Test
     void 시작일이_없으면_에러_응답() throws Exception {
-        mockMvc.perform(get("/admin/reservation-statuses")
+        mockMvc.perform(get("/admin/reservation-statuses").sessionAttr(SessionConstants.LOGIN_MEMBER_ID, 1L).sessionAttr(SessionConstants.LOGIN_MEMBER_ROLE, Role.ADMIN)
                         .param("endDate", "2023-08-31"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.code").value("INVALID_INPUT"))
@@ -73,7 +75,7 @@ class AdminReservationStatusControllerTest {
 
     @Test
     void 종료일_형식이_올바르지_않으면_에러_응답() throws Exception {
-        mockMvc.perform(get("/admin/reservation-statuses")
+        mockMvc.perform(get("/admin/reservation-statuses").sessionAttr(SessionConstants.LOGIN_MEMBER_ID, 1L).sessionAttr(SessionConstants.LOGIN_MEMBER_ROLE, Role.ADMIN)
                         .param("startDate", "2023-08-01")
                         .param("endDate", "invalid-date"))
                 .andExpect(status().isBadRequest())

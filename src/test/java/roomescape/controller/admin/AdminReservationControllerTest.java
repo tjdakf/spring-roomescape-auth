@@ -6,6 +6,8 @@ import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
+import roomescape.auth.SessionConstants;
+import roomescape.domain.member.Role;
 
 import roomescape.domain.Reservation;
 import roomescape.domain.ReservationSlot;
@@ -39,7 +41,7 @@ class AdminReservationControllerTest {
         given(reservationService.findAll())
                 .willReturn(List.of(reservation()));
 
-        mockMvc.perform(get("/admin/reservations"))
+        mockMvc.perform(get("/admin/reservations").sessionAttr(SessionConstants.LOGIN_MEMBER_ID, 1L).sessionAttr(SessionConstants.LOGIN_MEMBER_ROLE, Role.ADMIN))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].id").value(1))
                 .andExpect(jsonPath("$[0].name").value("브라운"))
@@ -61,7 +63,7 @@ class AdminReservationControllerTest {
                 eq(1L)))
                 .willReturn(reservation());
 
-        mockMvc.perform(post("/admin/reservations")
+        mockMvc.perform(post("/admin/reservations").sessionAttr(SessionConstants.LOGIN_MEMBER_ID, 1L).sessionAttr(SessionConstants.LOGIN_MEMBER_ROLE, Role.ADMIN)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(validRequest()))
                 .andExpect(status().isCreated())
@@ -79,7 +81,7 @@ class AdminReservationControllerTest {
 
     @Test
     void 예약을_삭제한다() throws Exception {
-        mockMvc.perform(delete("/admin/reservations/1"))
+        mockMvc.perform(delete("/admin/reservations/1").sessionAttr(SessionConstants.LOGIN_MEMBER_ID, 1L).sessionAttr(SessionConstants.LOGIN_MEMBER_ROLE, Role.ADMIN))
                 .andExpect(status().isNoContent());
 
         verify(reservationService, times(1)).deleteByAdmin(eq(1L), any(LocalDateTime.class));
@@ -88,7 +90,7 @@ class AdminReservationControllerTest {
 
     @Test
     void 삭제_id가_양수가_아니면_에러_응답() throws Exception {
-        mockMvc.perform(delete("/admin/reservations/0"))
+        mockMvc.perform(delete("/admin/reservations/0").sessionAttr(SessionConstants.LOGIN_MEMBER_ID, 1L).sessionAttr(SessionConstants.LOGIN_MEMBER_ROLE, Role.ADMIN))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.code").value("INVALID_INPUT"))
                 .andExpect(jsonPath("$.detail").value("id는 양수이어야 합니다."));

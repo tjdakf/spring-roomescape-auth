@@ -7,6 +7,7 @@ import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Repository;
 import roomescape.domain.member.Member;
 import roomescape.domain.member.MemberRepository;
+import roomescape.domain.member.Role;
 
 import java.sql.PreparedStatement;
 import java.util.List;
@@ -21,7 +22,8 @@ public class JdbcMemberRepository implements MemberRepository {
             resultSet.getLong("id"),
             resultSet.getString("login_id"),
             resultSet.getString("password"),
-            resultSet.getString("name")
+            resultSet.getString("name"),
+            Role.valueOf(resultSet.getString("role"))
     );
 
     public JdbcMemberRepository(JdbcTemplate jdbcTemplate) {
@@ -30,13 +32,14 @@ public class JdbcMemberRepository implements MemberRepository {
 
     @Override
     public Member insert(Member member) {
-        String sql = "INSERT INTO member(login_id, password, name) VALUES (?, ?, ?);";
+        String sql = "INSERT INTO member(login_id, password, name, role) VALUES (?, ?, ?, ?);";
         KeyHolder keyHolder = new GeneratedKeyHolder();
         jdbcTemplate.update(connection -> {
             PreparedStatement pstmt = connection.prepareStatement(sql, new String[]{"id"});
             pstmt.setString(1, member.getLoginId());
             pstmt.setString(2, member.getPassword());
             pstmt.setString(3, member.getName());
+            pstmt.setString(4, member.getRole().name());
             return pstmt;
         }, keyHolder);
 
@@ -46,20 +49,20 @@ public class JdbcMemberRepository implements MemberRepository {
 
     @Override
     public List<Member> findAll() {
-        String sql = "SELECT id, login_id, password, name FROM member ORDER BY id;";
+        String sql = "SELECT id, login_id, password, name, role FROM member ORDER BY id;";
         return jdbcTemplate.query(sql, memberRowMapper);
     }
 
     @Override
     public Optional<Member> findByMemberId(Long memberId) {
-        String sql = "SELECT id, login_id, password, name FROM member WHERE id = ?;";
+        String sql = "SELECT id, login_id, password, name, role FROM member WHERE id = ?;";
         List<Member> result = jdbcTemplate.query(sql, memberRowMapper, memberId);
         return result.stream().findAny();
     }
 
     @Override
     public Optional<Member> findByLoginId(String loginId) {
-        String sql = "SELECT id, login_id, password, name FROM member WHERE login_id = ?;";
+        String sql = "SELECT id, login_id, password, name, role FROM member WHERE login_id = ?;";
         List<Member> result = jdbcTemplate.query(sql, memberRowMapper, loginId);
         return result.stream().findAny();
     }

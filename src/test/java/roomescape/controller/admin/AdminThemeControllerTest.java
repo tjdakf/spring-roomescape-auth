@@ -6,6 +6,8 @@ import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
+import roomescape.auth.SessionConstants;
+import roomescape.domain.member.Role;
 
 import roomescape.domain.Theme;
 import roomescape.service.ThemeService;
@@ -31,7 +33,7 @@ class AdminThemeControllerTest {
         given(themeService.findAll())
                 .willReturn(List.of(theme()));
 
-        mockMvc.perform(get("/admin/themes"))
+        mockMvc.perform(get("/admin/themes").sessionAttr(SessionConstants.LOGIN_MEMBER_ID, 1L).sessionAttr(SessionConstants.LOGIN_MEMBER_ROLE, Role.ADMIN))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].id").value(1))
                 .andExpect(jsonPath("$[0].name").value("테마"))
@@ -47,7 +49,7 @@ class AdminThemeControllerTest {
         given(themeService.create("테마", "설명", "썸네일"))
                 .willReturn(theme());
 
-        mockMvc.perform(post("/admin/themes")
+        mockMvc.perform(post("/admin/themes").sessionAttr(SessionConstants.LOGIN_MEMBER_ID, 1L).sessionAttr(SessionConstants.LOGIN_MEMBER_ROLE, Role.ADMIN)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {
@@ -67,7 +69,7 @@ class AdminThemeControllerTest {
 
     @Test
     void 테마_생성_요청값이_유효하지_않으면_에러_응답() throws Exception {
-        mockMvc.perform(post("/admin/themes")
+        mockMvc.perform(post("/admin/themes").sessionAttr(SessionConstants.LOGIN_MEMBER_ID, 1L).sessionAttr(SessionConstants.LOGIN_MEMBER_ROLE, Role.ADMIN)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {
@@ -85,7 +87,7 @@ class AdminThemeControllerTest {
 
     @Test
     void 테마를_삭제한다() throws Exception {
-        mockMvc.perform(delete("/admin/themes/1"))
+        mockMvc.perform(delete("/admin/themes/1").sessionAttr(SessionConstants.LOGIN_MEMBER_ID, 1L).sessionAttr(SessionConstants.LOGIN_MEMBER_ROLE, Role.ADMIN))
                 .andExpect(status().isNoContent());
 
         verify(themeService, times(1)).delete(1L);
@@ -94,7 +96,7 @@ class AdminThemeControllerTest {
 
     @Test
     void 삭제_id가_양수가_아니면_에러_응답() throws Exception {
-        mockMvc.perform(delete("/admin/themes/0"))
+        mockMvc.perform(delete("/admin/themes/0").sessionAttr(SessionConstants.LOGIN_MEMBER_ID, 1L).sessionAttr(SessionConstants.LOGIN_MEMBER_ROLE, Role.ADMIN))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.code").value("INVALID_INPUT"))
                 .andExpect(jsonPath("$.detail").value("id는 양수이어야 합니다."));

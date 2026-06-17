@@ -6,6 +6,8 @@ import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
+import roomescape.auth.SessionConstants;
+import roomescape.domain.member.Role;
 import roomescape.domain.ReservationTime;
 import roomescape.service.ReservationTimeService;
 
@@ -31,7 +33,7 @@ class AdminReservationTimeControllerTest {
         given(reservationTimeService.findAll())
                 .willReturn(List.of(new ReservationTime(1L, LocalTime.of(10, 0))));
 
-        mockMvc.perform(get("/admin/times"))
+        mockMvc.perform(get("/admin/times").sessionAttr(SessionConstants.LOGIN_MEMBER_ID, 1L).sessionAttr(SessionConstants.LOGIN_MEMBER_ROLE, Role.ADMIN))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].id").value(1))
                 .andExpect(jsonPath("$[0].startAt").value("10:00:00"));
@@ -45,7 +47,7 @@ class AdminReservationTimeControllerTest {
         given(reservationTimeService.create(LocalTime.of(10, 0)))
                 .willReturn(new ReservationTime(1L, LocalTime.of(10, 0)));
 
-        mockMvc.perform(post("/admin/times")
+        mockMvc.perform(post("/admin/times").sessionAttr(SessionConstants.LOGIN_MEMBER_ID, 1L).sessionAttr(SessionConstants.LOGIN_MEMBER_ROLE, Role.ADMIN)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {
@@ -63,7 +65,7 @@ class AdminReservationTimeControllerTest {
 
     @Test
     void 예약_시간_생성_요청값이_유효하지_않으면_에러_응답() throws Exception {
-        mockMvc.perform(post("/admin/times")
+        mockMvc.perform(post("/admin/times").sessionAttr(SessionConstants.LOGIN_MEMBER_ID, 1L).sessionAttr(SessionConstants.LOGIN_MEMBER_ROLE, Role.ADMIN)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {
@@ -79,7 +81,7 @@ class AdminReservationTimeControllerTest {
 
     @Test
     void 예약_시간을_삭제한다() throws Exception {
-        mockMvc.perform(delete("/admin/times/1"))
+        mockMvc.perform(delete("/admin/times/1").sessionAttr(SessionConstants.LOGIN_MEMBER_ID, 1L).sessionAttr(SessionConstants.LOGIN_MEMBER_ROLE, Role.ADMIN))
                 .andExpect(status().isNoContent());
 
         verify(reservationTimeService, times(1)).delete(1L);
@@ -88,7 +90,7 @@ class AdminReservationTimeControllerTest {
 
     @Test
     void 삭제_id가_양수가_아니면_에러_응답() throws Exception {
-        mockMvc.perform(delete("/admin/times/0"))
+        mockMvc.perform(delete("/admin/times/0").sessionAttr(SessionConstants.LOGIN_MEMBER_ID, 1L).sessionAttr(SessionConstants.LOGIN_MEMBER_ROLE, Role.ADMIN))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.code").value("INVALID_INPUT"))
                 .andExpect(jsonPath("$.detail").value("id는 양수이어야 합니다."));

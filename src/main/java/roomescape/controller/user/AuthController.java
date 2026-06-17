@@ -33,6 +33,7 @@ public class AuthController {
         Member member = authService.login(request.loginId(), request.password());
         HttpSession session = httpServletRequest.getSession();
         session.setAttribute(SessionConstants.LOGIN_MEMBER_ID, member.getMemberId());
+        session.setAttribute(SessionConstants.LOGIN_MEMBER_ROLE, member.getRole());
         return ResponseEntity.ok().build();
     }
 
