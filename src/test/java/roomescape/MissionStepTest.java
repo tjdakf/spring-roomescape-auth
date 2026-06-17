@@ -2,6 +2,7 @@ package roomescape;
 
 import io.restassured.RestAssured;
 import io.restassured.http.ContentType;
+import io.restassured.specification.RequestSpecification;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -32,9 +33,11 @@ public class MissionStepTest {
 
     @Test
     void 예약_대기_추가_조회_및_삭제() {
+        String brownSessionId = login("brown", "브라운");
+        String guguSessionId = login("gugu", "구구");
         Map<String, String> reservationParams = reservationRequest("브라운", LocalDate.now().plusDays(1), "1", "1");
 
-        RestAssured.given().log().all()
+        givenWithSession(brownSessionId)
                 .contentType(ContentType.JSON)
                 .body(reservationParams)
                 .when().post("/reservations")
@@ -43,7 +46,7 @@ public class MissionStepTest {
 
         Map<String, String> waitingParams = waitingRequest(reservationParams, "구구");
 
-        RestAssured.given().log().all()
+        givenWithSession(guguSessionId)
                 .contentType(ContentType.JSON)
                 .body(waitingParams)
                 .when().post("/waitings")
@@ -53,7 +56,7 @@ public class MissionStepTest {
                 .body("name", is("구구"))
                 .body("turn", is(1));
 
-        RestAssured.given().log().all()
+        givenWithSession(guguSessionId)
                 .queryParam("name", "구구")
                 .when().get("/waitings")
                 .then().log().all()
@@ -63,13 +66,13 @@ public class MissionStepTest {
                 .body("[0].name", is("구구"))
                 .body("[0].turn", is(1));
 
-        RestAssured.given().log().all()
+        givenWithSession(guguSessionId)
                 .queryParam("name", "구구")
                 .when().delete("/waitings/1")
                 .then().log().all()
                 .statusCode(204);
 
-        RestAssured.given().log().all()
+        givenWithSession(guguSessionId)
                 .queryParam("name", "구구")
                 .when().get("/waitings")
                 .then().log().all()
@@ -79,9 +82,12 @@ public class MissionStepTest {
 
     @Test
     void 같은_예약_슬롯의_대기는_신청_순서대로_순번이_부여된다() {
+        String brownSessionId = login("brown", "브라운");
+        String guguSessionId = login("gugu", "구구");
+        String pobiSessionId = login("pobi", "포비");
         Map<String, String> reservationParams = reservationRequest("브라운", LocalDate.now().plusDays(1), "1", "1");
 
-        RestAssured.given().log().all()
+        givenWithSession(brownSessionId)
                 .contentType(ContentType.JSON)
                 .body(reservationParams)
                 .when().post("/reservations")
@@ -91,7 +97,7 @@ public class MissionStepTest {
         Map<String, String> firstWaitingParams = waitingRequest(reservationParams, "구구");
         Map<String, String> secondWaitingParams = waitingRequest(reservationParams, "포비");
 
-        RestAssured.given().log().all()
+        givenWithSession(guguSessionId)
                 .contentType(ContentType.JSON)
                 .body(firstWaitingParams)
                 .when().post("/waitings")
@@ -99,7 +105,7 @@ public class MissionStepTest {
                 .statusCode(201)
                 .body("turn", is(1));
 
-        RestAssured.given().log().all()
+        givenWithSession(pobiSessionId)
                 .contentType(ContentType.JSON)
                 .body(secondWaitingParams)
                 .when().post("/waitings")
@@ -110,9 +116,12 @@ public class MissionStepTest {
 
     @Test
     void 예약_삭제시_첫번째_대기가_예약으로_승격되고_남은_대기_순번이_재정렬된다() {
+        String brownSessionId = login("brown", "브라운");
+        String guguSessionId = login("gugu", "구구");
+        String pobiSessionId = login("pobi", "포비");
         Map<String, String> reservationParams = reservationRequest("브라운", LocalDate.now().plusDays(1), "1", "1");
 
-        RestAssured.given().log().all()
+        givenWithSession(brownSessionId)
                 .contentType(ContentType.JSON)
                 .body(reservationParams)
                 .when().post("/reservations")
@@ -123,7 +132,7 @@ public class MissionStepTest {
         Map<String, String> firstWaitingParams = waitingRequest(reservationParams, "구구");
         Map<String, String> secondWaitingParams = waitingRequest(reservationParams, "포비");
 
-        RestAssured.given().log().all()
+        givenWithSession(guguSessionId)
                 .contentType(ContentType.JSON)
                 .body(firstWaitingParams)
                 .when().post("/waitings")
@@ -131,7 +140,7 @@ public class MissionStepTest {
                 .statusCode(201)
                 .body("turn", is(1));
 
-        RestAssured.given().log().all()
+        givenWithSession(pobiSessionId)
                 .contentType(ContentType.JSON)
                 .body(secondWaitingParams)
                 .when().post("/waitings")
@@ -139,13 +148,13 @@ public class MissionStepTest {
                 .statusCode(201)
                 .body("turn", is(2));
 
-        RestAssured.given().log().all()
+        givenWithSession(brownSessionId)
                 .queryParam("name", "브라운")
                 .when().delete("/reservations/1")
                 .then().log().all()
                 .statusCode(204);
 
-        RestAssured.given().log().all()
+        givenWithSession(guguSessionId)
                 .queryParam("name", "구구")
                 .when().get("/reservation-statuses")
                 .then().log().all()
@@ -156,7 +165,7 @@ public class MissionStepTest {
                 .body("[0].time.id", is(1))
                 .body("[0].turn", nullValue());
 
-        RestAssured.given().log().all()
+        givenWithSession(pobiSessionId)
                 .queryParam("name", "포비")
                 .when().get("/reservation-statuses")
                 .then().log().all()
@@ -170,9 +179,12 @@ public class MissionStepTest {
 
     @Test
     void 예약_변경시_기존_슬롯의_첫번째_대기가_예약으로_승격되고_남은_대기_순번이_재정렬된다() {
+        String brownSessionId = login("brown", "브라운");
+        String guguSessionId = login("gugu", "구구");
+        String pobiSessionId = login("pobi", "포비");
         Map<String, String> reservationParams = reservationRequest("브라운", LocalDate.now().plusDays(1), "1", "1");
 
-        RestAssured.given().log().all()
+        givenWithSession(brownSessionId)
                 .contentType(ContentType.JSON)
                 .body(reservationParams)
                 .when().post("/reservations")
@@ -183,7 +195,7 @@ public class MissionStepTest {
         Map<String, String> firstWaitingParams = waitingRequest(reservationParams, "구구");
         Map<String, String> secondWaitingParams = waitingRequest(reservationParams, "포비");
 
-        RestAssured.given().log().all()
+        givenWithSession(guguSessionId)
                 .contentType(ContentType.JSON)
                 .body(firstWaitingParams)
                 .when().post("/waitings")
@@ -191,7 +203,7 @@ public class MissionStepTest {
                 .statusCode(201)
                 .body("turn", is(1));
 
-        RestAssured.given().log().all()
+        givenWithSession(pobiSessionId)
                 .contentType(ContentType.JSON)
                 .body(secondWaitingParams)
                 .when().post("/waitings")
@@ -201,7 +213,7 @@ public class MissionStepTest {
 
         Map<String, String> updateParams = updateRequest("브라운", LocalDate.now().plusDays(2), "2");
 
-        RestAssured.given().log().all()
+        givenWithSession(brownSessionId)
                 .contentType(ContentType.JSON)
                 .body(updateParams)
                 .when().put("/reservations/1")
@@ -210,7 +222,7 @@ public class MissionStepTest {
                 .body("date", is(updateParams.get("date")))
                 .body("time.id", is(2));
 
-        RestAssured.given().log().all()
+        givenWithSession(brownSessionId)
                 .queryParam("name", "브라운")
                 .when().get("/reservation-statuses")
                 .then().log().all()
@@ -221,7 +233,7 @@ public class MissionStepTest {
                 .body("[0].time.id", is(2))
                 .body("[0].turn", nullValue());
 
-        RestAssured.given().log().all()
+        givenWithSession(guguSessionId)
                 .queryParam("name", "구구")
                 .when().get("/reservation-statuses")
                 .then().log().all()
@@ -232,7 +244,7 @@ public class MissionStepTest {
                 .body("[0].time.id", is(1))
                 .body("[0].turn", nullValue());
 
-        RestAssured.given().log().all()
+        givenWithSession(pobiSessionId)
                 .queryParam("name", "포비")
                 .when().get("/reservation-statuses")
                 .then().log().all()
@@ -246,16 +258,18 @@ public class MissionStepTest {
 
     @Test
     void 예약_대기_신청_예외_응답() {
+        String brownSessionId = login("brown", "브라운");
+        String guguSessionId = login("gugu", "구구");
         Map<String, String> reservationParams = reservationRequest("브라운", LocalDate.now().plusDays(1), "1", "1");
 
-        RestAssured.given().log().all()
+        givenWithSession(brownSessionId)
                 .contentType(ContentType.JSON)
                 .body(reservationParams)
                 .when().post("/reservations")
                 .then().log().all()
                 .statusCode(201);
 
-        RestAssured.given().log().all()
+        givenWithSession(brownSessionId)
                 .contentType(ContentType.JSON)
                 .body(reservationParams)
                 .when().post("/waitings")
@@ -266,14 +280,14 @@ public class MissionStepTest {
 
         Map<String, String> waitingParams = waitingRequest(reservationParams, "구구");
 
-        RestAssured.given().log().all()
+        givenWithSession(guguSessionId)
                 .contentType(ContentType.JSON)
                 .body(waitingParams)
                 .when().post("/waitings")
                 .then().log().all()
                 .statusCode(201);
 
-        RestAssured.given().log().all()
+        givenWithSession(guguSessionId)
                 .contentType(ContentType.JSON)
                 .body(waitingParams)
                 .when().post("/waitings")
@@ -285,9 +299,10 @@ public class MissionStepTest {
 
     @Test
     void 예약_가능한_시간에는_대기를_신청할_수_없다() {
+        String brownSessionId = login("brown", "브라운");
         Map<String, String> waitingParams = reservationRequest("브라운", LocalDate.now().plusDays(1), "1", "1");
 
-        RestAssured.given().log().all()
+        givenWithSession(brownSessionId)
                 .contentType(ContentType.JSON)
                 .body(waitingParams)
                 .when().post("/waitings")
@@ -299,9 +314,11 @@ public class MissionStepTest {
 
     @Test
     void 내_예약_목록에서_예약과_대기를_상태로_구분해서_함께_조회한다() {
+        String brownSessionId = login("brown", "브라운");
+        String guguSessionId = login("gugu", "구구");
         Map<String, String> myReservationParams = reservationRequest("브라운", LocalDate.now().plusDays(1), "1", "1");
 
-        RestAssured.given().log().all()
+        givenWithSession(brownSessionId)
                 .contentType(ContentType.JSON)
                 .body(myReservationParams)
                 .when().post("/reservations")
@@ -310,7 +327,7 @@ public class MissionStepTest {
 
         Map<String, String> reservedSlotParams = reservationRequestForSameDateAndTheme(myReservationParams, "구구", "2");
 
-        RestAssured.given().log().all()
+        givenWithSession(guguSessionId)
                 .contentType(ContentType.JSON)
                 .body(reservedSlotParams)
                 .when().post("/reservations")
@@ -319,14 +336,14 @@ public class MissionStepTest {
 
         Map<String, String> waitingParams = waitingRequest(reservedSlotParams, "브라운");
 
-        RestAssured.given().log().all()
+        givenWithSession(brownSessionId)
                 .contentType(ContentType.JSON)
                 .body(waitingParams)
                 .when().post("/waitings")
                 .then().log().all()
                 .statusCode(201);
 
-        RestAssured.given().log().all()
+        givenWithSession(brownSessionId)
                 .queryParam("name", "브라운")
                 .when().get("/reservation-statuses")
                 .then().log().all()
@@ -336,6 +353,38 @@ public class MissionStepTest {
                 .body("status", containsInAnyOrder("RESERVED", "WAITING"))
                 .body("find { it.status == 'RESERVED' }.turn", nullValue())
                 .body("find { it.status == 'WAITING' }.turn", is(1));
+    }
+
+    private String login(String loginId, String name) {
+        Map<String, String> memberParams = new HashMap<>();
+        memberParams.put("loginId", loginId);
+        memberParams.put("password", "password");
+        memberParams.put("name", name);
+
+        RestAssured.given().log().all()
+                .contentType(ContentType.JSON)
+                .body(memberParams)
+                .when().post("/members")
+                .then().log().all()
+                .statusCode(201);
+
+        Map<String, String> loginParams = new HashMap<>();
+        loginParams.put("loginId", loginId);
+        loginParams.put("password", "password");
+
+        return RestAssured.given().log().all()
+                .contentType(ContentType.JSON)
+                .body(loginParams)
+                .when().post("/login")
+                .then().log().all()
+                .statusCode(200)
+                .extract()
+                .cookie("JSESSIONID");
+    }
+
+    private RequestSpecification givenWithSession(String sessionId) {
+        return RestAssured.given().log().all()
+                .cookie("JSESSIONID", sessionId);
     }
 
     private Map<String, String> reservationRequest(String name, LocalDate date, String timeId, String themeId) {

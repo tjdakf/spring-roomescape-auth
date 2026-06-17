@@ -6,6 +6,8 @@ import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.request.RequestPostProcessor;
+import roomescape.auth.SessionConstants;
 import roomescape.domain.*;
 import roomescape.service.ReservationWaitingService;
 
@@ -40,6 +42,7 @@ class ReservationWaitingControllerTest {
                 .willReturn(waitingResult());
 
         mockMvc.perform(post("/waitings")
+                        .with(loginMember())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(validRequest()))
                 .andExpect(status().isCreated())
@@ -68,6 +71,7 @@ class ReservationWaitingControllerTest {
                 .willReturn(List.of(waitingResult()));
 
         mockMvc.perform(get("/waitings")
+                        .with(loginMember())
                         .param("name", "브라운"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].id").value(1))
@@ -85,6 +89,7 @@ class ReservationWaitingControllerTest {
     @Test
     void 예약_대기를_취소한다() throws Exception {
         mockMvc.perform(delete("/waitings/1")
+                        .with(loginMember())
                         .param("name", "브라운"))
                 .andExpect(status().isNoContent());
 
@@ -104,6 +109,7 @@ class ReservationWaitingControllerTest {
                 """;
 
         mockMvc.perform(post("/waitings")
+                        .with(loginMember())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(request))
                 .andExpect(status().isBadRequest())
@@ -125,6 +131,7 @@ class ReservationWaitingControllerTest {
                 """;
 
         mockMvc.perform(post("/waitings")
+                        .with(loginMember())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(request))
                 .andExpect(status().isBadRequest())
@@ -137,6 +144,7 @@ class ReservationWaitingControllerTest {
     @Test
     void 예약_대기_조회시_이름이_비어있으면_에러_응답() throws Exception {
         mockMvc.perform(get("/waitings")
+                        .with(loginMember())
                         .param("name", ""))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.code").value("INVALID_INPUT"))
@@ -148,10 +156,22 @@ class ReservationWaitingControllerTest {
     @Test
     void 예약_대기_취소시_id가_양수가_아니면_에러_응답() throws Exception {
         mockMvc.perform(delete("/waitings/0")
+                        .with(loginMember())
                         .param("name", "브라운"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.code").value("INVALID_INPUT"))
                 .andExpect(jsonPath("$.detail").value("id는 양수이어야 합니다."));
+
+        verifyNoMoreInteractions(reservationWaitingService);
+    }
+
+    @Test
+    void 로그인하지_않으면_예약_대기_요청을_차단한다() throws Exception {
+        mockMvc.perform(get("/waitings")
+                        .param("name", "브라운"))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.code").value("UNAUTHORIZED"))
+                .andExpect(jsonPath("$.detail").value("인증에 실패했습니다."));
 
         verifyNoMoreInteractions(reservationWaitingService);
     }
@@ -173,5 +193,12 @@ class ReservationWaitingControllerTest {
         return new WaitingWithTurn(
                 new ReservationWaiting(1L, new Reserver("브라운"), new ReservationSlot(LocalDate.of(2099, 1, 1), time, theme)),
                 2L);
+    }
+
+    private RequestPostProcessor loginMember() {
+        return request -> {
+            request.getSession().setAttribute(SessionConstants.LOGIN_MEMBER_ID, 1L);
+            return request;
+        };
     }
 }

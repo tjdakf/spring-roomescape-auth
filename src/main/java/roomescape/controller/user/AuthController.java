@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
+import roomescape.auth.SessionConstants;
 import roomescape.controller.dto.request.LoginRequest;
 import roomescape.controller.dto.response.LoginMemberResponse;
 import roomescape.domain.member.Member;
@@ -17,8 +18,6 @@ import roomescape.service.AuthService;
 
 @RestController
 public class AuthController {
-
-    private static final String LOGIN_MEMBER_ID = "loginMemberId";
 
     private final AuthService authService;
 
@@ -33,18 +32,18 @@ public class AuthController {
     ) {
         Member member = authService.login(request.loginId(), request.password());
         HttpSession session = httpServletRequest.getSession();
-        session.setAttribute(LOGIN_MEMBER_ID, member.getMemberId());
+        session.setAttribute(SessionConstants.LOGIN_MEMBER_ID, member.getMemberId());
         return ResponseEntity.ok().build();
     }
 
     @GetMapping("/me")
     public ResponseEntity<LoginMemberResponse> getLoginMember(HttpServletRequest httpServletRequest) {
         HttpSession session = httpServletRequest.getSession(false);
-        if (session == null || session.getAttribute(LOGIN_MEMBER_ID) == null) {
+        if (session == null || session.getAttribute(SessionConstants.LOGIN_MEMBER_ID) == null) {
             throw new RoomescapeException(ErrorCode.UNAUTHORIZED);
         }
 
-        Long memberId = (Long) session.getAttribute(LOGIN_MEMBER_ID);
+        Long memberId = (Long) session.getAttribute(SessionConstants.LOGIN_MEMBER_ID);
         Member member = authService.findLoginMember(memberId);
         return ResponseEntity.ok(LoginMemberResponse.from(member));
     }

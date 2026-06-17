@@ -5,6 +5,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.request.RequestPostProcessor;
+import roomescape.auth.SessionConstants;
 import roomescape.domain.ReservationTime;
 import roomescape.domain.Theme;
 import roomescape.service.ReservationLookupService;
@@ -38,6 +40,7 @@ class ReservationStatusControllerTest {
                 .willReturn(List.of(reservedStatus(), waitingStatus()));
 
         mockMvc.perform(get("/reservation-statuses")
+                        .with(loginMember())
                         .param("name", "브라운"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].id").value(1))
@@ -60,10 +63,22 @@ class ReservationStatusControllerTest {
     @Test
     void 이름이_비어있으면_에러_응답() throws Exception {
         mockMvc.perform(get("/reservation-statuses")
+                        .with(loginMember())
                         .param("name", ""))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.code").value("INVALID_INPUT"))
                 .andExpect(jsonPath("$.detail").value("name은 비어 있을 수 없습니다."));
+
+        verifyNoMoreInteractions(reservationLookupService);
+    }
+
+    @Test
+    void 로그인하지_않으면_예약_상태_조회_요청을_차단한다() throws Exception {
+        mockMvc.perform(get("/reservation-statuses")
+                        .param("name", "브라운"))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.code").value("UNAUTHORIZED"))
+                .andExpect(jsonPath("$.detail").value("인증에 실패했습니다."));
 
         verifyNoMoreInteractions(reservationLookupService);
     }
@@ -92,5 +107,12 @@ class ReservationStatusControllerTest {
                 theme,
                 Status.WAITING,
                 1L);
+    }
+
+    private RequestPostProcessor loginMember() {
+        return request -> {
+            request.getSession().setAttribute(SessionConstants.LOGIN_MEMBER_ID, 1L);
+            return request;
+        };
     }
 }

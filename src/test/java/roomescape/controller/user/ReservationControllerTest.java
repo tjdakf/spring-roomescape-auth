@@ -7,7 +7,9 @@ import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.request.RequestPostProcessor;
 
+import roomescape.auth.SessionConstants;
 import roomescape.domain.Reservation;
 import roomescape.domain.ReservationSlot;
 import roomescape.domain.ReservationTime;
@@ -47,6 +49,7 @@ class ReservationControllerTest {
                 .willReturn(reservation());
 
         mockMvc.perform(post("/reservations")
+                        .with(loginMember())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(validRequest()))
                 .andExpect(status().isCreated())
@@ -74,6 +77,7 @@ class ReservationControllerTest {
                 .willReturn(List.of(reservation()));
 
         mockMvc.perform(get("/reservations")
+                        .with(loginMember())
                         .param("name", "브라운"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].id").value(1))
@@ -91,6 +95,7 @@ class ReservationControllerTest {
     @Test
     void 사용자_본인_예약_조회시_이름이_비어있으면_에러_응답() throws Exception {
         mockMvc.perform(get("/reservations")
+                        .with(loginMember())
                         .param("name", ""))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.code").value("INVALID_INPUT"))
@@ -105,6 +110,7 @@ class ReservationControllerTest {
         String name = "브라운";
 
         mockMvc.perform(delete("/reservations/{id}", id)
+                        .with(loginMember())
                         .param("name", name))
                 .andExpect(status().isNoContent());
 
@@ -115,6 +121,7 @@ class ReservationControllerTest {
     @Test
     void 사용자_본인_예약_취소시_id가_양수가_아니면_에러_응답() throws Exception {
         mockMvc.perform(delete("/reservations/0")
+                        .with(loginMember())
                         .param("name", "브라운"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.code").value("INVALID_INPUT"))
@@ -135,6 +142,7 @@ class ReservationControllerTest {
                 .willReturn(updatedReservation());
 
         mockMvc.perform(put("/reservations/{id}", id)
+                        .with(loginMember())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(updateRequest()))
                 .andExpect(status().isOk())
@@ -166,6 +174,7 @@ class ReservationControllerTest {
                 """;
 
         mockMvc.perform(put("/reservations/1")
+                        .with(loginMember())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(request))
                 .andExpect(status().isBadRequest())
@@ -184,6 +193,7 @@ class ReservationControllerTest {
                 """;
 
         mockMvc.perform(put("/reservations/1")
+                        .with(loginMember())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(request))
                 .andExpect(status().isBadRequest())
@@ -205,6 +215,7 @@ class ReservationControllerTest {
                 """;
 
         mockMvc.perform(post("/reservations")
+                        .with(loginMember())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(request))
                 .andExpect(status().isBadRequest())
@@ -226,6 +237,7 @@ class ReservationControllerTest {
                 """;
 
         mockMvc.perform(post("/reservations")
+                        .with(loginMember())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(request))
                 .andExpect(status().isBadRequest())
@@ -246,6 +258,7 @@ class ReservationControllerTest {
                 .willThrow(new CannotAcquireLockException("lock timeout"));
 
         mockMvc.perform(post("/reservations")
+                        .with(loginMember())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(validRequest()))
                 .andExpect(status().isServiceUnavailable())
@@ -258,6 +271,17 @@ class ReservationControllerTest {
                 eq(1L),
                 eq(1L),
                 any(LocalDateTime.class));
+        verifyNoMoreInteractions(reservationService);
+    }
+
+    @Test
+    void 로그인하지_않으면_사용자_예약_요청을_차단한다() throws Exception {
+        mockMvc.perform(get("/reservations")
+                        .param("name", "브라운"))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.code").value("UNAUTHORIZED"))
+                .andExpect(jsonPath("$.detail").value("인증에 실패했습니다."));
+
         verifyNoMoreInteractions(reservationService);
     }
 
@@ -292,5 +316,12 @@ class ReservationControllerTest {
         ReservationTime time = new ReservationTime(2L, LocalTime.of(12, 0));
         Theme theme = new Theme(1L, "테마", "설명", "썸네일");
         return new Reservation(1L, new Reserver("브라운"), new ReservationSlot(LocalDate.of(2099, 1, 2), time, theme));
+    }
+
+    private RequestPostProcessor loginMember() {
+        return request -> {
+            request.getSession().setAttribute(SessionConstants.LOGIN_MEMBER_ID, 1L);
+            return request;
+        };
     }
 }

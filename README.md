@@ -154,12 +154,13 @@
   - 기존 `GlobalExceptionHandler` 응답 형식과 맞춤
 
 ### 인증 공통 처리
-- [ ] 로그인 여부 확인 Interceptor를 추가
+- [x] 로그인 여부 확인 Interceptor 추가
   - 세션의 `loginMemberId` 존재 여부를 확인
   - 인증되지 않은 요청은 `401 Unauthorized`
   - 인증이 필요한 경로와 허용 경로를 구분
+  - 로그인, 회원가입, 공개 조회 API, 정적 리소스는 비로그인 허용
 
-- [ ] 현재 로그인 사용자 ArgumentResolver를 추가
+- [ ] 현재 로그인 사용자 ArgumentResolver 추가
   - `@LoginMember` 애노테이션 도입
   - 세션의 `loginMemberId`로 `Member` 조회
   - 컨트롤러에서 세션을 직접 조회하지 않도록 변경
