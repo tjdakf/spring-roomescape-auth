@@ -2,6 +2,7 @@ package roomescape.service;
 
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
+import org.springframework.dao.DuplicateKeyException;
 import roomescape.domain.member.Member;
 import roomescape.domain.member.MemberRepository;
 import roomescape.exception.ErrorCode;
@@ -30,7 +31,7 @@ class MemberServiceTest {
 
         when(memberRepository.findByLoginId(loginId))
                 .thenReturn(Optional.empty());
-        when(memberRepository.save(any(Member.class)))
+        when(memberRepository.insert(any(Member.class)))
                 .thenReturn(savedMember);
 
         // when
@@ -41,7 +42,7 @@ class MemberServiceTest {
 
         assertThat(result).isEqualTo(savedMember);
         verify(memberRepository, times(1)).findByLoginId(loginId);
-        verify(memberRepository, times(1)).save(captor.capture());
+        verify(memberRepository, times(1)).insert(captor.capture());
         verifyNoMoreInteractions(memberRepository);
 
         Member capturedMember = captor.getValue();
@@ -66,7 +67,27 @@ class MemberServiceTest {
                 .hasMessage("이미 존재하는 로그인 ID입니다.");
 
         verify(memberRepository, times(1)).findByLoginId(loginId);
-        verify(memberRepository, never()).save(any(Member.class));
+        verify(memberRepository, never()).insert(any(Member.class));
+        verifyNoMoreInteractions(memberRepository);
+    }
+
+    @Test
+    void 저장시_loginId_중복이_발생하면_예외() {
+        // given
+        String loginId = "gugu";
+        when(memberRepository.findByLoginId(loginId))
+                .thenReturn(Optional.empty());
+        when(memberRepository.insert(any(Member.class)))
+                .thenThrow(new DuplicateKeyException("duplicate login_id"));
+
+        // when & then
+        assertThatThrownBy(() -> memberService.join(loginId, "password", "구구"))
+                .isInstanceOf(RoomescapeException.class)
+                .hasFieldOrPropertyWithValue("errorCode", ErrorCode.DUPLICATE_RESOURCE)
+                .hasMessage("이미 존재하는 로그인 ID입니다.");
+
+        verify(memberRepository, times(1)).findByLoginId(loginId);
+        verify(memberRepository, times(1)).insert(any(Member.class));
         verifyNoMoreInteractions(memberRepository);
     }
 }

@@ -19,14 +19,14 @@ class MemoryMemberRepositoryTest {
     void 회원을_저장하면_memberId를_부여한다() {
         Member member = new Member(null, "gugu", "password", "구구");
 
-        Member savedMember = memberRepository.save(member);
+        Member savedMember = memberRepository.insert(member);
 
         assertThat(savedMember.getMemberId()).isNotNull();
     }
 
     @Test
     void memberId로_회원을_조회한다() {
-        Member savedMember = memberRepository.save(new Member(null, "gugu", "password", "구구"));
+        Member savedMember = memberRepository.insert(new Member(null, "gugu", "password", "구구"));
 
         assertThat(memberRepository.findByMemberId(savedMember.getMemberId()))
                 .contains(savedMember);
@@ -39,7 +39,7 @@ class MemoryMemberRepositoryTest {
 
     @Test
     void loginId로_회원을_조회한다() {
-        Member savedMember = memberRepository.save(new Member(null, "gugu", "password", "구구"));
+        Member savedMember = memberRepository.insert(new Member(null, "gugu", "password", "구구"));
 
         assertThat(memberRepository.findByLoginId("gugu"))
                 .contains(savedMember);

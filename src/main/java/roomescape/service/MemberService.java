@@ -1,5 +1,6 @@
 package roomescape.service;
 
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
 import roomescape.domain.member.Member;
 import roomescape.domain.member.MemberRepository;
@@ -18,12 +19,20 @@ public class MemberService {
     public Member join(String loginId, String password, String name) {
         validateDuplicateLoginId(loginId);
         Member member = new Member(null, loginId, password, name);
-        return memberRepository.save(member);
+        try {
+            return memberRepository.insert(member);
+        } catch (DuplicateKeyException e) {
+            throw duplicateLoginId();
+        }
     }
 
     private void validateDuplicateLoginId(String loginId) {
         if (memberRepository.findByLoginId(loginId).isPresent()) {
-            throw new RoomescapeException(ErrorCode.DUPLICATE_RESOURCE, "이미 존재하는 로그인 ID입니다.");
+            throw duplicateLoginId();
         }
+    }
+
+    private RoomescapeException duplicateLoginId() {
+        return new RoomescapeException(ErrorCode.DUPLICATE_RESOURCE, "이미 존재하는 로그인 ID입니다.");
     }
 }
