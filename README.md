@@ -1,6 +1,7 @@
 ## 방탈출 API 명세
 | 기능              | 메서드 / URL                                      | 요청                               | 응답                                                           | 상태 코드 |
 |-----------------|------------------------------------------------|----------------------------------|--------------------------------------------------------------|-------|
+| 회원가입           | POST `/members`                                | `{loginId, password, name}`      | `{loginId}`                                                   | 201   |
 | 사용자 예약 등록       | POST `/reservations`                           | `{name, date, timeId, themeId}`  | `{id, name, date, time: {id, startAt}, theme: {id, name}}`   | 201   |
 | 사용자 본인 예약 조회    | GET `/reservations?name=브라운`                 | —                                | `[{id, name, date, time: {id, startAt}, theme: {id, name}}, ...]` | 200   |
 | 사용자 본인 예약 상태 조회 | GET `/reservation-statuses?name=브라운`         | —                                | `[{id, name, date, time: {id, startAt}, theme: {id, name}, status, turn}, ...]` | 200   |
@@ -40,6 +41,10 @@
 |------------|--------|----------|------|
 | INVALID_INPUT | name은 비어 있을 수 없습니다. | 400 | 요청 본문의 필수 문자열 값이 비어 있음 |
 | INVALID_INPUT | name은 255자를 넘을 수 없습니다. | 400 | 요청 본문의 문자열 길이가 허용 범위를 초과함 |
+| INVALID_INPUT | loginId는 비어 있을 수 없습니다. | 400 | 회원가입 요청의 로그인 ID가 비어 있음 |
+| INVALID_INPUT | loginId는 255자를 넘을 수 없습니다. | 400 | 회원가입 요청의 로그인 ID 길이가 허용 범위를 초과함 |
+| INVALID_INPUT | password는 비어 있을 수 없습니다. | 400 | 회원가입 요청의 비밀번호가 비어 있음 |
+| INVALID_INPUT | password는 255자를 넘을 수 없습니다. | 400 | 회원가입 요청의 비밀번호 길이가 허용 범위를 초과함 |
 | INVALID_INPUT | timeId는 비어 있을 수 없습니다. | 400 | 요청 본문의 필수 ID 값이 누락됨 |
 | INVALID_INPUT | timeId는 양수이어야 합니다. | 400 | 요청 본문의 ID 값이 양수가 아님 |
 | INVALID_INPUT | themeId는 비어 있을 수 없습니다. | 400 | 요청 본문의 필수 ID 값이 누락됨 |
@@ -68,6 +73,7 @@
 | NOT_FOUND | 존재하지 않는 리소스입니다. | 404 | 존재하지 않는 URL로 요청함 |
 | DUPLICATE_RESOURCE | 이미 예약된 시간입니다. | 409 | 같은 날짜·시간·테마에 이미 다른 예약이 존재함 |
 | DUPLICATE_RESOURCE | 이미 예약 대기를 신청한 시간입니다. | 409 | 같은 사용자가 같은 날짜·시간·테마에 중복 대기를 요청함 |
+| DUPLICATE_RESOURCE | 이미 존재하는 로그인 ID입니다. | 409 | 회원가입 요청의 로그인 ID가 이미 존재함 |
 | WAITING_NOT_ALLOWED_FOR_OWN_RESERVATION | 본인이 예약한 시간에는 대기를 신청할 수 없습니다. | 409 | 본인이 이미 예약한 날짜·시간·테마에 대기 신청을 요청함 |
 | PAST_RESOURCE_LOCKED | 이미 지난 예약은 변경하거나 취소할 수 없습니다. | 409 | 이미 지난 예약 변경·취소를 요청함 |
 | PAST_RESOURCE_LOCKED | 이미 지난 예약 대기는 취소할 수 없습니다. | 409 | 이미 지난 예약 대기 취소를 요청함 |
@@ -82,7 +88,7 @@
 ## 구현할 기능 목록
 
 ### 회원가입
-- [x] 회원 도메인과 메모리 저장소를 추가
+- [x] 회원 도메인과 메모리 저장소 추가
   - `Member`는 `memberId`, `loginId`, `password`, `name`을 가짐
   - `memberId`는 내부 식별자, `loginId`는 로그인 ID로 구분
   - `MemberRepository` 인터페이스 도입
@@ -91,27 +97,27 @@
   - `loginId`로 회원 조회 기능 추가
   - `memberId`로 회원 조회 기능 추가
 
-- [x] 회원가입 서비스를 추가
+- [x] 회원가입 서비스 추가
   - 회원가입 요청 값으로 `loginId`, `password`, `name`을 받음
   - `loginId`로 기존 회원을 조회해 중복 여부를 판단
   - 중복 `loginId`면 예외 발생
   - 중복이 아니면 `Member` 생성 후 저장
 
-- [ ] 회원가입 컨트롤러를 추가
+- [x] 회원가입 컨트롤러 추가
   - `POST /members` 요청을 받음
   - 요청 DTO로 `loginId`, `password`, `name`을 받음
   - 회원가입 서비스 호출
   - 성공 시 `201 Created` 반환
 
 ### 로그인
-- [ ] 로그인 서비스를 추가
+- [ ] 로그인 서비스 추가
   - 로그인 요청 값으로 `loginId`, `password`를 받음
   - `loginId`로 회원 조회
   - 회원이 없으면 로그인 실패 예외 발생
   - 비밀번호가 일치하지 않으면 로그인 실패 예외 발생
   - 성공하면 로그인한 `Member` 반환
 
-- [ ] 로그인 컨트롤러를 추가
+- [ ] 로그인 컨트롤러 추가
   - `POST /login` 요청을 받음
   - 요청 DTO로 `loginId`, `password`를 받음
   - 로그인 서비스 호출
@@ -120,14 +126,14 @@
   - 성공 시 `200 OK` 반환
 
 ### 로그아웃
-- [ ] 로그아웃 컨트롤러를 추가
+- [ ] 로그아웃 컨트롤러 추가
   - `POST /logout` 요청을 받음
   - 현재 세션이 있으면 `invalidate()`
   - 현재 세션이 없어도 실패로 보지 않음
   - 성공 시 `204 No Content` 반환
 
 ### 예외 처리
-- [ ] 회원/인증 예외 응답을 정리
+- [ ] 회원/인증 예외 응답 정리
   - 중복 `loginId` 예외 추가
   - 로그인 실패 예외 추가
   - 로그인 실패는 `401 Unauthorized`로 응답
