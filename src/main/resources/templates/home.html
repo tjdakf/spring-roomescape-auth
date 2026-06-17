@@ -40,9 +40,10 @@
             position: fixed;
             top: 0; left: 0; right: 0;
             z-index: 100;
-            display: flex;
+            display: grid;
+            grid-template-columns: minmax(180px, 1fr) auto minmax(180px, 1fr);
             align-items: center;
-            justify-content: space-between;
+            column-gap: 2rem;
             padding: 1.5rem 3rem;
             background: rgba(10,10,12,0.85);
             backdrop-filter: blur(16px);
@@ -51,6 +52,7 @@
         }
 
         .nav-logo {
+            justify-self: start;
             font-family: 'Cormorant Garamond', serif;
             font-size: 1.6rem;
             font-weight: 300;
@@ -62,6 +64,7 @@
         .nav-logo span { color: var(--accent); }
 
         .nav-tabs {
+            justify-self: center;
             display: flex;
             gap: 2.5rem;
             list-style: none;
@@ -92,20 +95,71 @@
         .nav-tabs a:hover::after,
         .nav-tabs a.active::after { width: 100%; }
 
+        .nav-actions {
+            justify-self: end;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .nav-welcome {
+            color: var(--text-secondary);
+            font-size: 0.78rem;
+            white-space: nowrap;
+        }
+
+        .nav-welcome .role-icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 28px;
+            height: 20px;
+            margin-left: 0.25rem;
+            border: 1px solid rgba(200,169,110,0.45);
+            border-radius: 999px;
+            color: var(--accent);
+            background: var(--accent-dim);
+            font-size: 0.62rem;
+            font-weight: 500;
+            letter-spacing: 0.04em;
+            padding: 0 0.35rem;
+        }
+
+        .nav-welcome .role-icon.admin {
+            border-color: rgba(224,82,82,0.45);
+            color: var(--danger);
+            background: rgba(224,82,82,0.08);
+        }
+
+        .nav-login,
         .nav-reserve {
             font-size: 0.72rem;
             letter-spacing: 0.15em;
             text-transform: uppercase;
+            text-decoration: none;
+            white-space: nowrap;
+        }
+
+        .nav-login {
+            color: var(--accent);
+            background: transparent;
+            border: 1px solid var(--border-hover);
+            padding: 0.55rem 1rem;
+            border-radius: 2px;
+            cursor: pointer;
+        }
+
+        .nav-reserve {
             color: var(--bg);
             background: var(--accent);
-            border: none;
+            border: 1px solid var(--accent);
             padding: 0.6rem 1.4rem;
             border-radius: 2px;
             cursor: pointer;
-            text-decoration: none;
             transition: opacity 0.2s;
         }
 
+        .nav-login:hover,
         .nav-reserve:hover { opacity: 0.85; }
 
         /* ─── HERO ─── */
@@ -691,8 +745,15 @@
 
         /* ─── RESPONSIVE ─── */
         @media (max-width: 768px) {
-            nav { padding: 1.2rem 1.5rem; }
+            nav {
+                display: flex;
+                justify-content: space-between;
+                padding: 1.2rem 1.5rem;
+            }
             .nav-tabs { display: none; }
+            .nav-actions { gap: 0.45rem; }
+            .nav-login,
+            .nav-reserve { padding: 0.5rem 0.7rem; font-size: 0.66rem; }
             section { padding: 4rem 1.25rem; }
             .booking-banner { grid-template-columns: 1fr; }
             .reservation-lookup-form { grid-template-columns: 1fr; }
@@ -712,7 +773,11 @@
         <li><a href="#my-reservation" class="nav-link">내 예약·대기</a></li>
         <li><a href="#popular" class="nav-link">인기 테마</a></li>
     </ul>
-    <a href="/reservation" class="nav-reserve">예약하기</a>
+    <div class="nav-actions">
+        <span class="nav-welcome" id="nav-welcome"></span>
+        <a href="/login" class="nav-login" id="nav-login">로그인</a>
+        <a href="/login?redirect=/reservation" class="nav-reserve reservation-link">예약하기</a>
+    </div>
 </nav>
 
 <!-- HERO -->
@@ -726,8 +791,8 @@
         당신의 추리력과 팀워크로 60분을 지배하세요.
     </p>
     <div class="hero-cta">
-        <a href="/reservation" class="btn-primary">지금 예약하기</a>
-        <a href="#themes" class="btn-ghost">테마 둘러보기</a>
+        <a href="/login?redirect=/reservation" class="btn-primary reservation-link">지금 예약하기</a>
+        <button type="button" class="btn-ghost" onclick="activateTab('themes', true)">테마 둘러보기</button>
     </div>
     <div class="hero-scroll">
         <div class="scroll-line"></div>
@@ -770,7 +835,7 @@
                     </div>
                 </div>
                 <div style="display:flex; gap:0.75rem; flex-wrap:wrap;">
-                    <a href="/reservation" class="btn-primary" style="white-space:nowrap;">예약 페이지로 →</a>
+                    <a href="/login?redirect=/reservation" class="btn-primary reservation-link" style="white-space:nowrap;">예약 페이지로 →</a>
                     <button type="button" class="btn-ghost" style="white-space:nowrap;" onclick="activateTab('my-reservation', true)">내 예약·대기 조회</button>
                 </div>
             </div>
@@ -779,19 +844,16 @@
         <!-- 탭 3: 내 예약·대기 -->
         <div class="tab-content" id="tab-my-reservation">
             <div class="section-label"><span>My Reservation</span></div>
-            <h2 class="section-title fade-in">예약자 이름으로<br>내 예약·대기를 확인하세요</h2>
+            <h2 class="section-title fade-in">로그인한 계정으로<br>내 예약·대기를 확인하세요</h2>
 
             <div class="booking-banner fade-in">
                 <div>
                     <div class="booking-banner-title">내 예약·대기 조회</div>
                     <div class="booking-banner-desc">
-                        예약이나 대기를 신청할 때 입력한 이름으로 내 예약·대기 목록을 확인할 수 있습니다.
+                        현재 로그인한 계정의 예약과 대기 목록을 확인할 수 있습니다.
                     </div>
                 </div>
-                <form class="reservation-lookup-form" onsubmit="moveToMyReservation(event)">
-                    <input type="text" id="home-reservation-name" placeholder="사용자 이름을 입력하세요" autocomplete="off">
-                    <button type="submit" class="btn-primary" style="white-space:nowrap;">조회하기</button>
-                </form>
+                <a href="/reservation/me" class="btn-primary" style="white-space:nowrap;">조회하기</a>
             </div>
         </div>
 
@@ -824,23 +886,73 @@
     function activateTab(tab, scrollToMain) {
         document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
         document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-        document.querySelector(`[data-tab="${tab}"]`).classList.add('active');
-        document.getElementById('tab-' + tab).classList.add('active');
+        const tabButton = document.querySelector(`[data-tab="${tab}"]`);
+        const tabContent = document.getElementById('tab-' + tab);
+        if (!tabButton || !tabContent) {
+            return;
+        }
+        tabButton.classList.add('active');
+        tabContent.classList.add('active');
         if (scrollToMain) {
             document.getElementById('main-section').scrollIntoView({ behavior: 'smooth' });
         }
         triggerFadeIns();
     }
 
-    function moveToMyReservation(event) {
-        event.preventDefault();
-        const input = document.getElementById('home-reservation-name');
-        const name = input.value.trim();
-        if (!name) {
-            input.focus();
-            return;
+    fetch('/me')
+        .then(response => response.ok ? response.json() : null)
+        .then(member => {
+            configureReservationLinks(member);
+            if (!member) {
+                return;
+            }
+            document.getElementById('nav-welcome').innerHTML = renderWelcome(member);
+            const loginLink = document.getElementById('nav-login');
+            loginLink.textContent = '로그아웃';
+            loginLink.href = '#logout';
+            loginLink.addEventListener('click', event => {
+                event.preventDefault();
+                fetch('/logout', {method: 'POST'})
+                    .then(() => window.location.reload());
+            });
+        })
+        .catch(() => configureReservationLinks(null));
+
+    function configureReservationLinks(member) {
+        document.querySelectorAll('.reservation-link').forEach(link => {
+            link.replaceWith(link.cloneNode(true));
+        });
+
+        document.querySelectorAll('.reservation-link').forEach(link => {
+            if (!member) {
+                link.href = '/login?redirect=/reservation';
+                return;
+            }
+            if (member.role === 'ADMIN' || member.role === 'MANAGER') {
+                link.href = '#';
+                link.addEventListener('click', event => {
+                    event.preventDefault();
+                    alert('관리자 또는 매니저는 사용자 예약을 신청할 수 없습니다.');
+                });
+                return;
+            }
+            link.href = '/reservation';
+        });
+    }
+
+    function renderWelcome(member) {
+        const roleIcon = renderRoleIcon(member.role);
+        return `${escapeHtml(member.name)}${roleIcon}님 환영합니다.`;
+    }
+
+    function renderRoleIcon(role) {
+        if (role === 'ADMIN') {
+            return '<span class="role-icon admin">관리자</span>';
         }
-        window.location.href = `/reservation/me?name=${encodeURIComponent(name)}`;
+        if (role === 'MANAGER') {
+            return '<span class="role-icon">매니저</span>';
+        }
+        return '';
     }
 
     // ─── 네비 링크 클릭 시 탭 전환 ───

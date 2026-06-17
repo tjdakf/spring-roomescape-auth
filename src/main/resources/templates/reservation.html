@@ -11,7 +11,11 @@
 
 <header>
     <a href="/" class="escape-logo">ESC<span>A</span>PE</a>
-    <a href="/reservation/me" class="header-link">내 예약·대기 조회</a>
+    <div class="header-actions">
+        <span class="header-welcome" id="header-welcome"></span>
+        <button type="button" class="header-button" onclick="logout()">로그아웃</button>
+        <a href="/reservation/me" class="header-link">내 예약·대기 조회</a>
+    </div>
 </header>
 
 <main>
@@ -83,7 +87,6 @@
         </div>
         <form class="booking-form" onsubmit="submitReservation(event)">
             <div class="booking-summary" id="booking-summary"></div>
-            <input type="text" id="user-name" placeholder="신청자 성함을 입력하세요">
             <button type="submit" class="btn-reserve" id="btn-reserve">예약하기</button>
         </form>
     </div>
@@ -103,6 +106,8 @@
     const dateSelect = document.getElementById('date-select');
     const timeContainer = document.getElementById('time-container');
     const bookingSection = document.getElementById('booking-section');
+
+    loadHeaderMember();
 
     // 오늘 날짜를 min으로 설정
     const today = getTodayString();
@@ -255,7 +260,6 @@
         document.getElementById('btn-reserve').textContent = selectedSlotAvailable ? '예약하기' : '대기 신청하기';
         bookingSection.style.display = 'block';
         bookingSection.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-        setTimeout(() => document.getElementById('user-name').focus(), 300);
     }
 
     function submitReservation(event) {
@@ -264,12 +268,6 @@
     }
 
     function makeReservation() {
-        const name = document.getElementById('user-name').value.trim();
-        if (!name) {
-            showToast('성함을 입력해주세요', 'error');
-            return;
-        }
-
         const btn = document.getElementById('btn-reserve');
         btn.disabled = true;
         btn.textContent = selectedSlotAvailable ? '예약 중...' : '대기 신청 중...';
@@ -277,8 +275,7 @@
         const body = {
             themeId: parseInt(selectedThemeId),
             date: dateSelect.value,
-            timeId: selectedTimeId,
-            name: name
+            timeId: selectedTimeId
         };
 
         const path = selectedSlotAvailable ? '/reservations' : '/waitings';
@@ -289,9 +286,13 @@
             body: JSON.stringify(body)
         })
             .then(res => {
+                if (res.status === 401) {
+                    window.location.href = `/login?redirect=${encodeURIComponent('/reservation')}`;
+                    return;
+                }
                 if (res.ok) {
                     showToast(selectedSlotAvailable ? '예약이 완료되었습니다' : '대기 신청이 완료되었습니다', 'success');
-                    setTimeout(() => window.location.href = `/reservation/me?name=${encodeURIComponent(name)}`, 1500);
+                    setTimeout(() => window.location.href = '/reservation/me', 1500);
                     return;
                 }
                 return res.json()
@@ -333,6 +334,41 @@
         toast.textContent = msg;
         toast.className = `toast ${type} show`;
         setTimeout(() => toast.className = 'toast', 2800);
+    }
+
+    function loadHeaderMember() {
+        fetch('/me')
+            .then(response => response.ok ? response.json() : null)
+            .then(member => {
+                if (!member) {
+                    window.location.href = `/login?redirect=${encodeURIComponent('/reservation')}`;
+                    return;
+                }
+                document.getElementById('header-welcome').innerHTML = renderWelcome(member);
+            })
+            .catch(() => {
+                window.location.href = `/login?redirect=${encodeURIComponent('/reservation')}`;
+            });
+    }
+
+    function renderWelcome(member) {
+        const roleIcon = renderRoleIcon(member.role);
+        return `${escapeHtml(member.name)}${roleIcon}님 환영합니다.`;
+    }
+
+    function renderRoleIcon(role) {
+        if (role === 'ADMIN') {
+            return '<span class="role-icon admin">관리자</span>';
+        }
+        if (role === 'MANAGER') {
+            return '<span class="role-icon">매니저</span>';
+        }
+        return '';
+    }
+
+    function logout() {
+        fetch('/logout', {method: 'POST'})
+            .then(() => window.location.href = '/');
     }
 
     function handleResponse(response) {

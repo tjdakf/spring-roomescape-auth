@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>회원 관리</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;600&family=Noto+Sans+KR:wght@300;400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/app.css">
+</head>
+<body class="admin-page">
+<header>
+    <a href="/admin" class="brand">
+        <div class="header-title">회원 관리</div>
+        <div class="header-sub">Admin</div>
+    </a>
+    <nav class="admin-nav">
+        <a href="/admin/reservation">예약</a>
+        <a href="/admin/time">시간</a>
+        <a href="/admin/theme">테마</a>
+        <a href="/admin/member" class="active">회원</a>
+    </nav>
+</header>
+
+<main>
+    <div class="section-header">
+        <div class="section-title">회원 목록</div>
+    </div>
+    <div class="result-meta" id="member-meta">회원 목록을 불러오는 중입니다.</div>
+    <div class="table-wrap">
+        <table>
+            <thead>
+            <tr>
+                <th>ID</th>
+                <th>로그인 ID</th>
+                <th>이름</th>
+                <th>등급</th>
+                <th class="right">관리</th>
+            </tr>
+            </thead>
+            <tbody id="member-body">
+            <tr>
+                <td colspan="5" class="empty">조회 중입니다</td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+</main>
+
+<div class="toast" id="toast"></div>
+
+<script>
+    let loginMember = null;
+    let members = [];
+
+    window.onload = () => {
+        loadLoginMember()
+            .then(loadMembers)
+            .catch(showError);
+    };
+
+    function loadLoginMember() {
+        return fetch('/me')
+            .then(handleResponse)
+            .then(member => {
+                loginMember = member;
+            });
+    }
+
+    function loadMembers() {
+        return fetch('/admin/members')
+            .then(handleResponse)
+            .then(data => {
+                members = data;
+                renderMembers();
+            });
+    }
+
+    function renderMembers() {
+        const body = document.getElementById('member-body');
+        const meta = document.getElementById('member-meta');
+        meta.textContent = `회원 ${members.length}명`;
+
+        if (members.length === 0) {
+            body.innerHTML = `<tr><td colspan="5" class="empty">회원이 없습니다</td></tr>`;
+            return;
+        }
+
+        body.innerHTML = members.map(member => `
+            <tr>
+                <td class="muted">${member.memberId}</td>
+                <td>${escapeHtml(member.loginId)}</td>
+                <td>${escapeHtml(member.name)}</td>
+                <td>${renderRoleBadge(member.role)}</td>
+                <td class="right">${renderRoleAction(member)}</td>
+            </tr>
+        `).join('');
+    }
+
+    function renderRoleAction(member) {
+        if (!loginMember || loginMember.role !== 'ADMIN') {
+            return '<span class="muted">권한 없음</span>';
+        }
+        if (member.role === 'ADMIN') {
+            return '<span class="muted">변경 불가</span>';
+        }
+
+        return `
+            <div class="inline-action">
+                <select id="role-select-${member.memberId}">
+                    <option value="USER"${member.role === 'USER' ? ' selected' : ''}>USER</option>
+                    <option value="MANAGER"${member.role === 'MANAGER' ? ' selected' : ''}>MANAGER</option>
+                </select>
+                <button type="button" class="table-action-button" onclick="changeRole(${member.memberId})">변경</button>
+            </div>
+        `;
+    }
+
+    function changeRole(memberId) {
+        const select = document.getElementById(`role-select-${memberId}`);
+        const role = select.value;
+
+        fetch(`/admin/members/${memberId}/role`, {
+            method: 'PATCH',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({role})
+        })
+            .then(handleResponse)
+            .then(updatedMember => {
+                members = members.map(member => member.memberId === updatedMember.memberId ? updatedMember : member);
+                renderMembers();
+                showToast('회원 등급이 변경되었습니다', 'success');
+            })
+            .catch(showError);
+    }
+
+    function renderRoleBadge(role) {
+        const label = role || 'USER';
+        return `<span class="status-badge role ${label.toLowerCase()}">${escapeHtml(label)}</span>`;
+    }
+
+    function handleResponse(response) {
+        if (response.ok) {
+            return response.json();
+        }
+        return response.json()
+            .then(error => {
+                throw new Error(error.detail || '요청을 처리하지 못했습니다');
+            })
+            .catch(error => {
+                throw new Error(error.message || '요청을 처리하지 못했습니다');
+            });
+    }
+
+    function showError(error) {
+        document.getElementById('member-meta').textContent = '회원 목록을 불러오지 못했습니다.';
+        showToast(error.message, 'error');
+    }
+
+    function showToast(message, type = '') {
+        const toast = document.getElementById('toast');
+        toast.textContent = message;
+        toast.className = `toast ${type} show`;
+        setTimeout(() => toast.className = 'toast', 2600);
+    }
+
+    function escapeHtml(value) {
+        return String(value)
+            .replaceAll('&', '&amp;')
+            .replaceAll('<', '&lt;')
+            .replaceAll('>', '&gt;')
+            .replaceAll('"', '&quot;')
+            .replaceAll("'", '&#039;');
+    }
+</script>
+</body>
+</html>

@@ -10,22 +10,18 @@
 <body class="my-page">
 <header>
     <a href="/" class="escape-logo">ESC<span>A</span>PE</a>
-    <a href="/reservation" class="header-link">예약하기</a>
+    <div class="header-actions">
+        <span class="header-welcome" id="header-welcome"></span>
+        <button type="button" class="header-button" onclick="logout()">로그아웃</button>
+        <a href="/reservation" class="header-link">예약하기</a>
+    </div>
 </header>
 
 <main>
     <div class="section-header">
-        <div class="section-title">예약자 이름</div>
+        <div class="section-title">내 예약·대기</div>
     </div>
-    <div class="form-grid lookup-form">
-        <input type="text" id="name-input" placeholder="예약자 이름">
-        <button type="button" onclick="loadMyReservations()">조회</button>
-    </div>
-
-    <div class="section-header">
-        <div class="section-title">예약·대기 목록</div>
-    </div>
-    <div class="result-meta" id="result-meta">이름을 입력하면 예약·대기 목록이 표시됩니다.</div>
+    <div class="result-meta" id="result-meta">예약·대기 목록을 불러오는 중입니다.</div>
     <div class="table-wrap">
         <table>
             <thead>
@@ -51,62 +47,57 @@
 <div class="toast" id="toast"></div>
 
 <script>
-    const nameInput = document.getElementById('name-input');
     const reservationBody = document.getElementById('reservation-body');
     const resultMeta = document.getElementById('result-meta');
     let reservations = [];
+    let loginMember = null;
     let sortCriteria = [];
     let editingReservationId = null;
     let editingTimeId = null;
     let editingTimes = null;
 
     window.onload = () => {
-        nameInput.addEventListener('keydown', event => {
-            if (event.key === 'Enter') {
-                loadMyReservations();
-            }
-        });
         document.querySelectorAll('th[data-sort]').forEach(th => {
             th.addEventListener('click', () => {
                 toggleSort(th.dataset.sort);
-                renderReservations(nameInput.value.trim(), reservations);
+                renderReservations(reservations);
             });
         });
-        const params = new URLSearchParams(window.location.search);
-        const name = params.get('name');
-        if (name) {
-            nameInput.value = name;
-            loadMyReservations();
-        }
+        loadLoginMember()
+            .then(loadMyReservations)
+            .catch(showError);
     };
 
-    function loadMyReservations() {
-        const name = nameInput.value.trim();
-        if (!name) {
-            showToast('예약자 이름을 입력해주세요', 'error');
-            nameInput.focus();
-            return;
-        }
+    function loadLoginMember() {
+        return fetch('/me')
+            .then(handleResponse)
+            .then(member => {
+                loginMember = member;
+                document.getElementById('header-welcome').innerHTML = renderWelcome(member);
+            });
+    }
 
+    function loadMyReservations() {
         resultMeta.textContent = '예약·대기 목록을 불러오는 중입니다.';
         reservationBody.innerHTML = `<tr><td colspan="7" class="empty">조회 중입니다</td></tr>`;
 
-        fetch(`/reservation-statuses?name=${encodeURIComponent(name)}`)
+        fetch('/reservation-statuses')
             .then(handleResponse)
             .then(rows => {
                 reservations = rows;
                 editingReservationId = null;
                 editingTimeId = null;
                 editingTimes = null;
-                renderReservations(name, reservations);
+                renderReservations(reservations);
             })
             .catch(showError);
     }
 
-    function renderReservations(name, rows) {
+    function renderReservations(rows) {
         updateSortIndicators();
         const sortedRows = [...rows].sort(compareReservation);
-        resultMeta.textContent = `${name}님의 예약·대기 ${rows.length}건`;
+        const name = loginMember ? `${loginMember.name}님의 ` : '';
+        resultMeta.textContent = `${name}예약·대기 ${rows.length}건`;
         if (sortedRows.length === 0) {
             reservationBody.innerHTML = `<tr><td colspan="7" class="empty">조회된 예약이 없습니다</td></tr>`;
             return;
@@ -203,7 +194,7 @@
         editingReservationId = id;
         editingTimeId = null;
         editingTimes = null;
-        renderReservations(nameInput.value.trim(), reservations);
+        renderReservations(reservations);
         loadEditTimes(id);
     }
 
@@ -211,7 +202,7 @@
         editingReservationId = null;
         editingTimeId = null;
         editingTimes = null;
-        renderReservations(nameInput.value.trim(), reservations);
+        renderReservations(reservations);
     }
 
     function loadEditTimes(id) {
@@ -249,7 +240,6 @@
     }
 
     function updateReservation(id) {
-        const name = nameInput.value.trim();
         const reservation = findReservation(id, 'RESERVED');
         if (!reservation) {
             showToast('예약 정보를 찾을 수 없습니다', 'error');
@@ -266,7 +256,7 @@
             return;
         }
 
-        const body = {name: name};
+        const body = {};
         if (dateChanged) {
             body.date = dateInput.value;
         }
@@ -288,7 +278,6 @@
     }
 
     function cancelReservation(id, status) {
-        const name = nameInput.value.trim();
         const reservation = findReservation(id, status);
         if (!reservation) {
             showToast('예약 정보를 찾을 수 없습니다', 'error');
@@ -301,7 +290,7 @@
 
         const path = waiting ? `/waitings/${id}` : `/reservations/${id}`;
 
-        fetch(`${path}?name=${encodeURIComponent(name)}`, {
+        fetch(path, {
             method: 'DELETE'
         })
             .then(handleEmptyResponse)
@@ -403,6 +392,10 @@
         if (response.ok) {
             return response.json();
         }
+        if (response.status === 401) {
+            window.location.href = `/login?redirect=${encodeURIComponent('/reservation/me')}`;
+            return Promise.reject(new Error('로그인이 필요합니다.'));
+        }
         return response.json()
             .then(error => {
                 throw new Error(error.detail || '요청을 처리하지 못했습니다');
@@ -415,6 +408,10 @@
     function handleEmptyResponse(response) {
         if (response.ok) {
             return;
+        }
+        if (response.status === 401) {
+            window.location.href = `/login?redirect=${encodeURIComponent('/reservation/me')}`;
+            return Promise.reject(new Error('로그인이 필요합니다.'));
         }
         return response.json()
             .then(error => {
@@ -436,6 +433,26 @@
         toast.textContent = message;
         toast.className = `toast ${type} show`;
         setTimeout(() => toast.className = 'toast', 2600);
+    }
+
+    function renderWelcome(member) {
+        const roleIcon = renderRoleIcon(member.role);
+        return `${escapeHtml(member.name)}${roleIcon}님 환영합니다.`;
+    }
+
+    function renderRoleIcon(role) {
+        if (role === 'ADMIN') {
+            return '<span class="role-icon admin">관리자</span>';
+        }
+        if (role === 'MANAGER') {
+            return '<span class="role-icon">매니저</span>';
+        }
+        return '';
+    }
+
+    function logout() {
+        fetch('/logout', {method: 'POST'})
+            .then(() => window.location.href = '/');
     }
 
     function getTodayString() {

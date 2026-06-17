@@ -63,19 +63,81 @@ header {
 }
 
 .header-link {
-    background: none;
-    border: none;
-    border-radius: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 38px;
+    background: transparent;
+    border: 1px solid var(--border-hover);
+    border-radius: 6px;
     color: var(--accent);
     font-size: 0.78rem;
-    font-weight: 400;
+    font-weight: 500;
     letter-spacing: 0.1em;
     text-decoration: none;
-    padding: 0;
+    padding: 0.58rem 0.9rem;
+    white-space: nowrap;
+    transition: border-color 0.2s, background 0.2s, opacity 0.2s;
 }
 
 .header-link:hover {
     opacity: 0.85;
+    border-color: rgba(200,169,110,0.5);
+    background: var(--accent-dim);
+    transform: none;
+}
+
+.header-actions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.85rem;
+    flex-wrap: wrap;
+}
+
+.header-welcome {
+    color: var(--text-secondary);
+    font-size: 0.82rem;
+    white-space: nowrap;
+}
+
+.role-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 28px;
+    height: 20px;
+    margin-left: 0.25rem;
+    border: 1px solid rgba(200,169,110,0.45);
+    border-radius: 999px;
+    color: var(--accent);
+    background: var(--accent-dim);
+    font-size: 0.64rem;
+    font-weight: 500;
+    letter-spacing: 0.04em;
+    vertical-align: 1px;
+}
+
+.role-icon.admin {
+    border-color: rgba(224,82,82,0.45);
+    color: var(--danger);
+    background: rgba(224,82,82,0.08);
+}
+
+.header-button {
+    background: transparent;
+    border: 1px solid var(--border-hover);
+    border-radius: 6px;
+    color: var(--accent);
+    min-height: 38px;
+    padding: 0.58rem 0.9rem;
+    font-size: 0.78rem;
+    letter-spacing: 0.1em;
+}
+
+.header-button:hover {
+    border-color: rgba(200,169,110,0.5);
+    background: var(--accent-dim);
     transform: none;
 }
 
@@ -389,7 +451,8 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 
 .summary-value.accent { color: var(--accent); }
 
-input[type="text"] {
+input[type="text"],
+input[type="password"] {
     width: 100%;
     background: var(--surface-2);
     border: 1px solid var(--border);
@@ -402,8 +465,10 @@ input[type="text"] {
     transition: border-color 0.2s;
 }
 
-input[type="text"]::placeholder { color: var(--text-muted); }
-input[type="text"]:focus { outline: none; border-color: var(--accent); }
+input[type="text"]::placeholder,
+input[type="password"]::placeholder { color: var(--text-muted); }
+input[type="text"]:focus,
+input[type="password"]:focus { outline: none; border-color: var(--accent); }
 
 .btn-reserve {
     width: 100%;
@@ -574,6 +639,7 @@ select {
 }
 
 input[type="text"]:focus,
+input[type="password"]:focus,
 input[type="search"]:focus,
 input[type="date"]:focus,
 select:focus {
@@ -623,6 +689,91 @@ button:disabled {
     background: transparent;
     border-color: var(--border-hover);
     color: var(--text-secondary);
+}
+
+.login-main,
+.admin-login-main {
+    min-height: calc(100vh - 104px);
+    display: grid;
+    grid-template-columns: minmax(0, 420px);
+    align-items: start;
+    justify-content: center;
+    gap: 1rem;
+}
+
+.admin-login-main {
+    grid-template-columns: minmax(0, 360px);
+}
+
+.login-panel,
+.admin-login-form {
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--surface);
+    padding: 1.4rem;
+}
+
+.login-form,
+.admin-login-form {
+    display: grid;
+    gap: 0.65rem;
+}
+
+.login-tabs {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.35rem;
+    margin-bottom: 1.2rem;
+    padding: 0.25rem;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--surface-2);
+}
+
+.login-tab {
+    border: 1px solid transparent;
+    background: transparent;
+    color: var(--text-secondary);
+    border-radius: 6px;
+    padding: 0.55rem 0.7rem;
+    font-size: 0.78rem;
+}
+
+.login-tab.active {
+    border-color: rgba(200,169,110,0.5);
+    background: var(--accent-dim);
+    color: var(--accent);
+}
+
+.login-section {
+    display: none;
+}
+
+.login-section.active {
+    display: block;
+}
+
+.login-form label,
+.admin-login-form label {
+    color: var(--text-muted);
+    font-size: 0.7rem;
+    letter-spacing: 0.08em;
+}
+
+.login-form input,
+.admin-login-form input {
+    margin-bottom: 0.35rem;
+}
+
+.login-error {
+    min-height: 1.2rem;
+    color: var(--danger);
+    font-size: 0.78rem;
+    line-height: 1.5;
+}
+
+.login-error.success {
+    color: var(--success);
 }
 
 .reservation-filter-panel {
@@ -954,9 +1105,6 @@ tbody tr.edit-row:hover {
 
 .admin-home-main {
     min-height: calc(100vh - 104px);
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
 }
 
 .admin-home-heading {
@@ -977,8 +1125,9 @@ tbody tr.edit-row:hover {
 
 .admin-home-actions {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
     gap: 1rem;
+    margin-bottom: 3rem;
 }
 
 .admin-home-actions a {
@@ -1012,6 +1161,47 @@ tbody tr.edit-row:hover {
     color: var(--text-secondary);
     font-size: 0.78rem;
     line-height: 1.6;
+}
+
+.member-management-header {
+    margin-top: 1rem;
+}
+
+.inline-action {
+    display: inline-flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.45rem;
+}
+
+.inline-action select {
+    min-width: 120px;
+    padding: 0.42rem 0.55rem;
+    border-radius: 6px;
+    font-size: 0.76rem;
+}
+
+.status-badge.role {
+    min-width: 72px;
+    text-transform: uppercase;
+}
+
+.status-badge.role.admin {
+    border-color: rgba(224,82,82,0.45);
+    color: var(--danger);
+    background: rgba(224,82,82,0.08);
+}
+
+.status-badge.role.manager {
+    border-color: rgba(200,169,110,0.45);
+    color: var(--accent);
+    background: var(--accent-dim);
+}
+
+.status-badge.role.user {
+    border-color: rgba(76,175,125,0.45);
+    color: var(--success);
+    background: rgba(76,175,125,0.08);
 }
 
 body.error-page {
@@ -1076,6 +1266,16 @@ body.error-page {
         align-items: flex-start;
         flex-direction: column;
     }
+    .header-actions {
+        justify-content: flex-start;
+        gap: 0.55rem;
+    }
+    .header-link,
+    .header-button {
+        min-height: 34px;
+        padding: 0.5rem 0.68rem;
+        font-size: 0.72rem;
+    }
     .form-grid,
     .form-grid.theme-form,
     .form-grid.reservation-form,
@@ -1102,6 +1302,10 @@ body.error-page {
         flex: 1;
     }
     .admin-home-actions {
+        grid-template-columns: 1fr;
+    }
+    .login-main,
+    .admin-login-main {
         grid-template-columns: 1fr;
     }
     .error-actions {

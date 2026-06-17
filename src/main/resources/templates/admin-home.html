@@ -13,7 +13,11 @@
         <div class="header-title">관리자 페이지</div>
         <div class="header-sub">Admin</div>
     </div>
-    <a href="/" class="header-link">사용자 홈</a>
+    <div class="header-actions">
+        <span class="header-welcome" id="header-welcome"></span>
+        <button type="button" class="header-button" onclick="logout()">로그아웃</button>
+        <a href="/" class="header-link">사용자 홈</a>
+    </div>
 </header>
 
 <main class="admin-home-main">
@@ -34,7 +38,58 @@
             <span>테마 관리</span>
             <small>테마 조회, 추가, 삭제</small>
         </a>
+        <a href="/admin/member">
+            <span>회원 관리</span>
+            <small>회원 조회, 매니저 승격</small>
+        </a>
     </div>
 </main>
+<script>
+    loadHeaderMember();
+
+    function loadHeaderMember() {
+        fetch('/me')
+            .then(response => response.ok ? response.json() : null)
+            .then(member => {
+                if (!member) {
+                    window.location.href = '/admin/login';
+                    return;
+                }
+                document.getElementById('header-welcome').innerHTML = renderWelcome(member);
+            })
+            .catch(() => {
+                window.location.href = '/admin/login';
+            });
+    }
+
+    function renderWelcome(member) {
+        const roleIcon = renderRoleIcon(member.role);
+        return `${escapeHtml(member.name)}${roleIcon}님 환영합니다.`;
+    }
+
+    function renderRoleIcon(role) {
+        if (role === 'ADMIN') {
+            return '<span class="role-icon admin">관리자</span>';
+        }
+        if (role === 'MANAGER') {
+            return '<span class="role-icon">매니저</span>';
+        }
+        return '';
+    }
+
+    function logout() {
+        fetch('/logout', {method: 'POST'})
+            .then(() => window.location.href = '/');
+    }
+
+    function escapeHtml(value) {
+        return String(value)
+            .replaceAll('&', '&amp;')
+            .replaceAll('<', '&lt;')
+            .replaceAll('>', '&gt;')
+            .replaceAll('"', '&quot;')
+            .replaceAll("'", '&#039;');
+    }
+</script>
 </body>
 </html>

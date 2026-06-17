@@ -16,9 +16,19 @@ public class ViewController {
         return "reservation";
     }
 
+    @GetMapping("/login")
+    public String getLogin() {
+        return "login";
+    }
+
     @GetMapping("/reservation/me")
     public String getMyReservation() {
         return "my-reservation";
+    }
+
+    @GetMapping("/admin/login")
+    public String getAdminLogin() {
+        return "admin-login";
     }
 
     @GetMapping("/admin")
@@ -39,5 +49,10 @@ public class ViewController {
     @GetMapping("/admin/theme")
     public String getAdminTheme() {
         return "admin-theme";
+    }
+
+    @GetMapping("/admin/member")
+    public String getAdminMember() {
+        return "admin-member";
     }
 }

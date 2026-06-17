@@ -17,6 +17,7 @@
         <a href="/admin/reservation" class="active">예약</a>
         <a href="/admin/time">시간</a>
         <a href="/admin/theme">테마</a>
+        <a href="/admin/member">회원</a>
     </nav>
 </header>
 
@@ -25,7 +26,7 @@
         <div class="section-title">예약 추가</div>
     </div>
     <div class="form-grid reservation-form">
-        <input type="text" id="name-input" placeholder="예약자 이름">
+        <select id="member-select"></select>
         <input type="date" id="date-input">
         <select id="theme-select"></select>
         <select id="time-select"></select>
@@ -98,6 +99,7 @@
 
 <script>
     let reservations = [];
+    let members = [];
     let themes = [];
     let times = [];
     let sortCriteria = [];
@@ -115,6 +117,7 @@
             });
         });
         loadReservations();
+        loadMembers().catch(showError);
         loadThemes().catch(showError);
         loadTimes().catch(showError);
     };
@@ -129,6 +132,18 @@
                 renderReservations();
             })
             .catch(showError);
+    }
+
+    function loadMembers() {
+        return fetch('/admin/members')
+            .then(handleResponse)
+            .then(data => {
+                members = data;
+                const select = document.getElementById('member-select');
+                select.innerHTML = members.map(member => `
+                    <option value="${member.memberId}">${escapeHtml(member.name)} (${escapeHtml(member.loginId)})</option>
+                `).join('');
+            });
     }
 
     function loadThemes() {
@@ -289,7 +304,7 @@
 
     function createReservation() {
         const body = {
-            name: document.getElementById('name-input').value.trim(),
+            memberId: Number(document.getElementById('member-select').value),
             date: document.getElementById('date-input').value,
             themeId: Number(document.getElementById('theme-select').value),
             timeId: Number(document.getElementById('time-select').value)
@@ -302,7 +317,6 @@
         })
             .then(handleResponse)
             .then(() => {
-                document.getElementById('name-input').value = '';
                 showToast('예약이 추가되었습니다', 'success');
                 loadReservations();
             })
