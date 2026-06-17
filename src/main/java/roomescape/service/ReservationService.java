@@ -9,6 +9,7 @@ import roomescape.domain.ReservationTime;
 import roomescape.domain.ReservationWaiting;
 import roomescape.domain.Reserver;
 import roomescape.domain.Theme;
+import roomescape.domain.member.Member;
 import roomescape.exception.ErrorCode;
 import roomescape.exception.RoomescapeException;
 import roomescape.repository.ReservationRepository;
@@ -30,22 +31,25 @@ public class ReservationService {
     private final ThemeRepository themeRepository;
     private final ReservationWaitingRepository waitingRepository;
     private final ReservationValidator reservationValidator;
+    private final MemberService memberService;
 
     public ReservationService(
             ReservationRepository reservationRepository,
             ReservationTimeRepository reservationTimeRepository,
             ThemeRepository themeRepository,
             ReservationWaitingRepository waitingRepository,
-            ReservationValidator reservationValidator) {
+            ReservationValidator reservationValidator,
+            MemberService memberService) {
         this.reservationRepository = reservationRepository;
         this.reservationTimeRepository = reservationTimeRepository;
         this.themeRepository = themeRepository;
         this.waitingRepository = waitingRepository;
         this.reservationValidator = reservationValidator;
+        this.memberService = memberService;
     }
 
-    public List<Reservation> findByName(String name) {
-        return reservationRepository.findByReserver(new Reserver(name));
+    public List<Reservation> findByMemberId(Long memberId) {
+        return reservationRepository.findByMemberId(memberId);
     }
 
     public List<Reservation> findByDateRange(LocalDate startDate, LocalDate endDate) {
@@ -57,27 +61,28 @@ public class ReservationService {
     }
 
     @Transactional
-    public Reservation createByUser(String name, LocalDate date, Long timeId, Long themeId, LocalDateTime now) {
+    public Reservation createByUser(Long memberId, String name, LocalDate date, Long timeId, Long themeId, LocalDateTime now) {
         ReservationSlot slot = new ReservationSlot(date, findReservationTime(timeId), findTheme(themeId));
-        Reservation reservation = new Reservation(null, new Reserver(name), slot);
+        Reservation reservation = new Reservation(null, memberId, new Reserver(name), slot);
         reservationValidator.validateCreatableByUser(reservation, now);
 
         return insertReservation(reservation);
     }
 
     @Transactional
-    public Reservation createByAdmin(String name, LocalDate date, Long timeId, Long themeId) {
+    public Reservation createByAdmin(Long memberId, LocalDate date, Long timeId, Long themeId) {
+        Member member = memberService.findByMemberId(memberId);
         ReservationSlot slot = new ReservationSlot(date, findReservationTime(timeId), findTheme(themeId));
-        Reservation reservation = new Reservation(null, new Reserver(name), slot);
+        Reservation reservation = new Reservation(null, member.getMemberId(), new Reserver(member.getName()), slot);
         reservationValidator.validateCreatableByAdmin(reservation);
 
         return insertReservation(reservation);
     }
 
     @Transactional
-    public void deleteByUser(Long id, String name, LocalDateTime now) {
+    public void deleteByUser(Long id, Long memberId, LocalDateTime now) {
         Reservation reservation = findReservation(id);
-        reservationValidator.validateModifiableByUser(reservation, name, now);
+        reservationValidator.validateModifiableByUser(reservation, memberId, now);
         deleteAndPromoteWaiting(reservation);
     }
 
@@ -98,9 +103,9 @@ public class ReservationService {
     }
 
     @Transactional
-    public Reservation updateByUser(Long id, String name, LocalDate updateDate, Long updateTimeId, LocalDateTime now) {
+    public Reservation updateByUser(Long id, Long memberId, LocalDate updateDate, Long updateTimeId, LocalDateTime now) {
         Reservation reservation = findReservation(id);
-        reservationValidator.validateModifiableByUser(reservation, name, now);
+        reservationValidator.validateModifiableByUser(reservation, memberId, now);
 
         Reservation updatedReservation = createUpdatedReservation(reservation, updateDate, updateTimeId);
         reservationValidator.validateUpdatedReservation(reservation, updatedReservation, now);
@@ -138,6 +143,7 @@ public class ReservationService {
         ReservationSlot originalSlot = reservation.getSlot();
         return new Reservation(
                 reservation.getId(),
+                reservation.getMemberId(),
                 reservation.getReserver(),
                 new ReservationSlot(
                         resolveUpdateDate(originalSlot.getDate(), updateDate),

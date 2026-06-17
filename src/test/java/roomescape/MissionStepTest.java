@@ -27,8 +27,10 @@ public class MissionStepTest {
     void setup() {
         jdbcTemplate.update("DELETE FROM reservation_waiting;");
         jdbcTemplate.update("DELETE FROM reservation;");
+        jdbcTemplate.update("DELETE FROM member;");
         jdbcTemplate.update("ALTER TABLE reservation_waiting ALTER COLUMN id RESTART WITH 1;");
         jdbcTemplate.update("ALTER TABLE reservation ALTER COLUMN id RESTART WITH 1;");
+        jdbcTemplate.update("ALTER TABLE member ALTER COLUMN id RESTART WITH 1;");
     }
 
     @Test

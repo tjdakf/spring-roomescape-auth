@@ -2,7 +2,6 @@ package roomescape.service;
 
 import org.springframework.stereotype.Component;
 import roomescape.domain.ReservationWaiting;
-import roomescape.domain.Reserver;
 import roomescape.exception.ErrorCode;
 import roomescape.exception.RoomescapeException;
 import roomescape.repository.ReservationRepository;
@@ -30,8 +29,8 @@ public class ReservationWaitingValidator {
         validateNotDuplicateWaiting(waiting);
     }
 
-    public void validateModifiable(ReservationWaiting waiting, String name, LocalDateTime now) {
-        validateOwner(waiting, name);
+    public void validateModifiable(ReservationWaiting waiting, Long memberId, LocalDateTime now) {
+        validateOwner(waiting, memberId);
         validateNotPastForModification(waiting, now);
     }
 
@@ -48,7 +47,7 @@ public class ReservationWaitingValidator {
     }
 
     private void validateNotOwnReservationSlot(ReservationWaiting waiting) {
-        if (reservationRepository.existsByReserverAndSlot(waiting.getReserver(), waiting.getSlot())) {
+        if (waiting.getMemberId() != null && reservationRepository.existsByMemberIdAndSlot(waiting.getMemberId(), waiting.getSlot())) {
             throw new RoomescapeException(
                     ErrorCode.WAITING_NOT_ALLOWED_FOR_OWN_RESERVATION, "본인이 예약한 시간에는 대기를 신청할 수 없습니다."
             );
@@ -56,13 +55,13 @@ public class ReservationWaitingValidator {
     }
 
     private void validateNotDuplicateWaiting(ReservationWaiting waiting) {
-        if (reservationWaitingRepository.existsByReserverAndSlot(waiting.getReserver(), waiting.getSlot())) {
+        if (waiting.getMemberId() != null && reservationWaitingRepository.existsByMemberIdAndSlot(waiting.getMemberId(), waiting.getSlot())) {
             throw new RoomescapeException(ErrorCode.DUPLICATE_RESOURCE, "이미 예약 대기를 신청한 시간입니다.");
         }
     }
 
-    private void validateOwner(ReservationWaiting waiting, String name) {
-        if (!waiting.isOwnedBy(new Reserver(name))) {
+    private void validateOwner(ReservationWaiting waiting, Long memberId) {
+        if (!waiting.isOwnedBy(memberId)) {
             throw new RoomescapeException(ErrorCode.FORBIDDEN_RESOURCE, "본인의 예약 대기만 취소할 수 있습니다.");
         }
     }

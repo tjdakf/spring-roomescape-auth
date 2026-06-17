@@ -80,15 +80,18 @@ class ReservationTimeRepositoryTest {
         ReservationTime time2 = dao.insert(new ReservationTime(null, LocalTime.of(10, 0)));
         Long themeId = insertTheme("테마");
         Long otherThemeId = insertTheme("다른 테마");
+        Long brownId = insertMember("brown", "브라운");
+        Long guguId = insertMember("gugu", "구구");
+        Long pobiId = insertMember("pobi", "포비");
         jdbcTemplate.update(
-                "INSERT INTO reservation(name, date, time_id, theme_id) VALUES (?, ?, ?, ?)",
-                "브라운", date, time1.getId(), themeId);
+                "INSERT INTO reservation(member_id, date, time_id, theme_id) VALUES (?, ?, ?, ?)",
+                brownId, date, time1.getId(), themeId);
         jdbcTemplate.update(
-                "INSERT INTO reservation(name, date, time_id, theme_id) VALUES (?, ?, ?, ?)",
-                "구구", date, time2.getId(), otherThemeId);
+                "INSERT INTO reservation(member_id, date, time_id, theme_id) VALUES (?, ?, ?, ?)",
+                guguId, date, time2.getId(), otherThemeId);
         jdbcTemplate.update(
-                "INSERT INTO reservation(name, date, time_id, theme_id) VALUES (?, ?, ?, ?)",
-                "포비", date.plusDays(1), time2.getId(), themeId);
+                "INSERT INTO reservation(member_id, date, time_id, theme_id) VALUES (?, ?, ?, ?)",
+                pobiId, date.plusDays(1), time2.getId(), themeId);
 
         // when
         List<TimeAvailability> result = dao.findAvailabilitiesByThemeIdAndDate(themeId, date);
@@ -113,5 +116,15 @@ class ReservationTimeRepositoryTest {
             return pstmt;
         }, keyHolder);
         return keyHolder.getKey().longValue();
+    }
+
+    private Long insertMember(String loginId, String name) {
+        jdbcTemplate.update(
+                "INSERT INTO member(login_id, password, name) VALUES (?, ?, ?);",
+                loginId,
+                "password",
+                name
+        );
+        return jdbcTemplate.queryForObject("SELECT id FROM member WHERE login_id = ?;", Long.class, loginId);
     }
 }

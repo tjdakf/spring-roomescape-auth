@@ -3,6 +3,8 @@ package roomescape.repository;
 import roomescape.domain.member.Member;
 import roomescape.domain.member.MemberRepository;
 
+import java.util.Comparator;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
@@ -19,6 +21,13 @@ public class MemoryMemberRepository implements MemberRepository {
         Member savedMember = member.withMemberId(memberId);
         members.put(memberId, savedMember);
         return savedMember;
+    }
+
+    @Override
+    public List<Member> findAll() {
+        return members.values().stream()
+                .sorted(Comparator.comparing(Member::getMemberId))
+                .toList();
     }
 
     @Override

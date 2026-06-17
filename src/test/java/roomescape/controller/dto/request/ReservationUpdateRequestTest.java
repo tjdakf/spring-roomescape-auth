@@ -21,37 +21,12 @@ class ReservationUpdateRequestTest {
     private final Validator validator = Validation.buildDefaultValidatorFactory().getValidator();
     private final LocalDate date = LocalDate.parse("2026-05-02");
 
-    @Test
-    void 이름이_null이면_예외() {
-        // when
-        Set<ConstraintViolation<ReservationUpdateRequest>> result = validator.validate(
-                new ReservationUpdateRequest(null, date, 1L));
-
-        // then
-        assertThat(result).extracting(ConstraintViolation::getMessage)
-                .containsExactly("name은 비어 있을 수 없습니다.");
-    }
-
-    @Test
-    void 이름이_255자를_초과하면_예외() {
-        // given
-        String name = "a".repeat(256);
-
-        // when
-        Set<ConstraintViolation<ReservationUpdateRequest>> result = validator.validate(
-                new ReservationUpdateRequest(name, date, 1L));
-
-        // then
-        assertThat(result).extracting(ConstraintViolation::getMessage)
-                .containsExactly("name은 255자를 넘을 수 없습니다.");
-    }
-
     @ParameterizedTest
     @ValueSource(longs = {0, -1})
     void timeId가_양수가_아니면_예외(Long timeId) {
         // when
         Set<ConstraintViolation<ReservationUpdateRequest>> result = validator.validate(
-                new ReservationUpdateRequest("브라운", date, timeId));
+                new ReservationUpdateRequest(date, timeId));
 
         // then
         assertThat(result).extracting(ConstraintViolation::getMessage)
@@ -62,7 +37,7 @@ class ReservationUpdateRequestTest {
     void 날짜와_시간이_모두_null이면_예외() {
         // when
         Set<ConstraintViolation<ReservationUpdateRequest>> result = validator.validate(
-                new ReservationUpdateRequest("브라운", null, null));
+                new ReservationUpdateRequest(null, null));
 
         // then
         assertThat(result).extracting(ConstraintViolation::getMessage)
@@ -72,16 +47,12 @@ class ReservationUpdateRequestTest {
     @ParameterizedTest
     @MethodSource("validRequests")
     void 정상_생성_테스트(LocalDate date, Long timeId) {
-        // given
-        String name = "브라운";
-
         // when
-        ReservationUpdateRequest result = new ReservationUpdateRequest(name, date, timeId);
+        ReservationUpdateRequest result = new ReservationUpdateRequest(date, timeId);
 
         // then
         assertAll(
                 () -> assertThat(validator.validate(result)).isEmpty(),
-                () -> assertThat(result.name()).isEqualTo(name),
                 () -> assertThat(result.date()).isEqualTo(date),
                 () -> assertThat(result.timeId()).isEqualTo(timeId));
     }

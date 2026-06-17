@@ -39,9 +39,9 @@ class ReservationWaitingValidatorTest {
         ReservationWaiting waiting = waiting("브라운", date);
         when(reservationRepository.existsBySlotForUpdate(any(ReservationSlot.class)))
                 .thenReturn(true);
-        when(reservationRepository.existsByReserverAndSlot(eq(new Reserver("브라운")), any(ReservationSlot.class)))
+        when(reservationRepository.existsByMemberIdAndSlot(eq(1L), any(ReservationSlot.class)))
                 .thenReturn(false);
-        when(reservationWaitingRepository.existsByReserverAndSlot(eq(new Reserver("브라운")), any(ReservationSlot.class)))
+        when(reservationWaitingRepository.existsByMemberIdAndSlot(eq(1L), any(ReservationSlot.class)))
                 .thenReturn(false);
 
         // when & then
@@ -69,7 +69,7 @@ class ReservationWaitingValidatorTest {
         ReservationWaiting waiting = waiting("브라운", date);
         when(reservationRepository.existsBySlotForUpdate(any(ReservationSlot.class)))
                 .thenReturn(true);
-        when(reservationRepository.existsByReserverAndSlot(eq(new Reserver("브라운")), any(ReservationSlot.class)))
+        when(reservationRepository.existsByMemberIdAndSlot(eq(1L), any(ReservationSlot.class)))
                 .thenReturn(true);
 
         // when & then
@@ -85,9 +85,9 @@ class ReservationWaitingValidatorTest {
         ReservationWaiting waiting = waiting("브라운", date);
         when(reservationRepository.existsBySlotForUpdate(any(ReservationSlot.class)))
                 .thenReturn(true);
-        when(reservationRepository.existsByReserverAndSlot(eq(new Reserver("브라운")), any(ReservationSlot.class)))
+        when(reservationRepository.existsByMemberIdAndSlot(eq(1L), any(ReservationSlot.class)))
                 .thenReturn(false);
-        when(reservationWaitingRepository.existsByReserverAndSlot(eq(new Reserver("브라운")), any(ReservationSlot.class)))
+        when(reservationWaitingRepository.existsByMemberIdAndSlot(eq(1L), any(ReservationSlot.class)))
                 .thenReturn(true);
 
         // when & then
@@ -117,7 +117,7 @@ class ReservationWaitingValidatorTest {
 
         // when & then
         assertThatNoException()
-                .isThrownBy(() -> validator.validateModifiable(waiting, "브라운", now));
+                .isThrownBy(() -> validator.validateModifiable(waiting, 1L, now));
         verifyNoMoreInteractions(reservationRepository, reservationWaitingRepository);
     }
 
@@ -127,7 +127,7 @@ class ReservationWaitingValidatorTest {
         ReservationWaiting waiting = waiting("브라운", date);
 
         // when & then
-        assertThatThrownBy(() -> validator.validateModifiable(waiting, "구구", now))
+        assertThatThrownBy(() -> validator.validateModifiable(waiting, 2L, now))
                 .isInstanceOf(RoomescapeException.class)
                 .hasFieldOrPropertyWithValue("errorCode", ErrorCode.FORBIDDEN_RESOURCE)
                 .hasMessage("본인의 예약 대기만 취소할 수 있습니다.");
@@ -140,7 +140,7 @@ class ReservationWaitingValidatorTest {
         ReservationWaiting waiting = waiting("브라운", LocalDate.now().minusDays(1));
 
         // when & then
-        assertThatThrownBy(() -> validator.validateModifiable(waiting, "브라운", now))
+        assertThatThrownBy(() -> validator.validateModifiable(waiting, 1L, now))
                 .isInstanceOf(RoomescapeException.class)
                 .hasFieldOrPropertyWithValue("errorCode", ErrorCode.PAST_RESOURCE_LOCKED)
                 .hasMessage("이미 지난 예약 대기는 취소할 수 없습니다.");
@@ -148,6 +148,6 @@ class ReservationWaitingValidatorTest {
     }
 
     private ReservationWaiting waiting(String name, LocalDate date) {
-        return new ReservationWaiting(1L, new Reserver(name), new ReservationSlot(date, time, theme));
+        return new ReservationWaiting(1L, 1L, new Reserver(name), new ReservationSlot(date, time, theme));
     }
 }

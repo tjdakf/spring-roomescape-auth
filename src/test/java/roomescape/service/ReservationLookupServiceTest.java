@@ -30,21 +30,22 @@ class ReservationLookupServiceTest {
     private final Theme theme = new Theme(1L, "테스트 테마", "테마 설명", "썸네일 주소");
 
     @Test
-    void 이름으로_예약과_예약_대기를_함께_조회한다() {
+    void memberId로_예약과_예약_대기를_함께_조회한다() {
         // given
+        Long memberId = 1L;
         String name = "브라운";
         Reservation reservation = new Reservation(1L, new Reserver(name), new ReservationSlot(date, time, theme));
         WaitingWithTurn waiting = new WaitingWithTurn(
                 new ReservationWaiting(2L, new Reserver(name), new ReservationSlot(date.plusDays(1), time, theme)),
                 1L);
 
-        when(reservationService.findByName(name))
+        when(reservationService.findByMemberId(memberId))
                 .thenReturn(List.of(reservation));
-        when(reservationWaitingService.findByName(name))
+        when(reservationWaitingService.findByMemberId(memberId))
                 .thenReturn(List.of(waiting));
 
         // when
-        List<ReservationStatus> result = service.findByName(name);
+        List<ReservationStatus> result = service.findByMemberId(memberId);
 
         // then
         assertAll(
@@ -60,6 +61,7 @@ class ReservationLookupServiceTest {
     @Test
     void 예약과_예약_대기를_날짜와_시간_내림차순으로_조회한다() {
         // given
+        Long memberId = 1L;
         String name = "브라운";
         ReservationTime earlyTime = new ReservationTime(1L, LocalTime.parse("10:00"));
         ReservationTime lateTime = new ReservationTime(2L, LocalTime.parse("12:00"));
@@ -70,13 +72,13 @@ class ReservationLookupServiceTest {
                 new ReservationWaiting(3L, new Reserver(name), new ReservationSlot(date.plusDays(1), earlyTime, theme)),
                 1L);
 
-        when(reservationService.findByName(name))
+        when(reservationService.findByMemberId(memberId))
                 .thenReturn(List.of(earlyReservation, lateReservation));
-        when(reservationWaitingService.findByName(name))
+        when(reservationWaitingService.findByMemberId(memberId))
                 .thenReturn(List.of(futureWaiting));
 
         // when
-        List<ReservationStatus> result = service.findByName(name);
+        List<ReservationStatus> result = service.findByMemberId(memberId);
 
         // then
         assertThat(result).extracting(ReservationStatus::id)

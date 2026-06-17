@@ -35,13 +35,12 @@ class ReservationStatusControllerTest {
     private ReservationLookupService reservationLookupService;
 
     @Test
-    void 이름으로_예약과_예약_대기를_함께_조회한다() throws Exception {
-        given(reservationLookupService.findByName(eq("브라운")))
+    void 로그인_사용자의_예약과_예약_대기를_함께_조회한다() throws Exception {
+        given(reservationLookupService.findByMemberId(eq(1L)))
                 .willReturn(List.of(reservedStatus(), waitingStatus()));
 
         mockMvc.perform(get("/reservation-statuses")
-                        .with(loginMember())
-                        .param("name", "브라운"))
+                        .with(loginMember()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].id").value(1))
                 .andExpect(jsonPath("$[0].name").value("브라운"))
@@ -56,26 +55,13 @@ class ReservationStatusControllerTest {
                 .andExpect(jsonPath("$[1].status").value("WAITING"))
                 .andExpect(jsonPath("$[1].turn").value(1));
 
-        verify(reservationLookupService, times(1)).findByName("브라운");
-        verifyNoMoreInteractions(reservationLookupService);
-    }
-
-    @Test
-    void 이름이_비어있으면_에러_응답() throws Exception {
-        mockMvc.perform(get("/reservation-statuses")
-                        .with(loginMember())
-                        .param("name", ""))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.code").value("INVALID_INPUT"))
-                .andExpect(jsonPath("$.detail").value("name은 비어 있을 수 없습니다."));
-
+        verify(reservationLookupService, times(1)).findByMemberId(1L);
         verifyNoMoreInteractions(reservationLookupService);
     }
 
     @Test
     void 로그인하지_않으면_예약_상태_조회_요청을_차단한다() throws Exception {
-        mockMvc.perform(get("/reservation-statuses")
-                        .param("name", "브라운"))
+        mockMvc.perform(get("/reservation-statuses"))
                 .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("$.code").value("UNAUTHORIZED"))
                 .andExpect(jsonPath("$.detail").value("인증에 실패했습니다."));

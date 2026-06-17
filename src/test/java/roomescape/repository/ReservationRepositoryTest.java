@@ -26,12 +26,16 @@ class ReservationRepositoryTest {
     private ReservationRepository reservationRepository;
 
     private LocalDate date = LocalDate.of(2023, 8, 5);
+    private int memberSequence;
 
     @BeforeEach
     void setup() {
         this.reservationRepository = new ReservationRepository(jdbcTemplate);
         jdbcTemplate.update("DELETE FROM reservation;");
+        jdbcTemplate.update("DELETE FROM member;");
         jdbcTemplate.update("ALTER TABLE reservation ALTER COLUMN id RESTART WITH 1;");
+        jdbcTemplate.update("ALTER TABLE member ALTER COLUMN id RESTART WITH 1;");
+        memberSequence = 1;
     }
 
     @Test
@@ -39,7 +43,7 @@ class ReservationRepositoryTest {
         // given
         ReservationTime time = findTimeByStartAt("15:00");
         Theme theme = new Theme(1L, "테마 이름", "테마 설명", "썸네일");
-        Reservation reservation = new Reservation(null, new Reserver("브라운"), new ReservationSlot(date, time, theme));
+        Reservation reservation = reservation("브라운", new ReservationSlot(date, time, theme));
 
         // when
         Reservation savedReservation = reservationRepository.insert(reservation);
@@ -61,8 +65,8 @@ class ReservationRepositoryTest {
         Theme theme1 = new Theme(1L, "테마 이름1", "테마 설명1", "썸네일1");
         ReservationTime time2 = findTimeByStartAt("12:00");
         Theme theme2 = new Theme(2L, "테마 이름2", "테마 설명2", "썸네일2");
-        Reservation reservation1 = new Reservation(null, new Reserver("브라운"), new ReservationSlot(date, time1, theme1));
-        Reservation reservation2 = new Reservation(null, new Reserver("구구"), new ReservationSlot(date, time2, theme2));
+        Reservation reservation1 = reservation("브라운", new ReservationSlot(date, time1, theme1));
+        Reservation reservation2 = reservation("구구", new ReservationSlot(date, time2, theme2));
         Long id1 = reservationRepository.insert(reservation1).getId();
         reservationRepository.insert(reservation2);
 
@@ -78,18 +82,19 @@ class ReservationRepositoryTest {
     }
 
     @Test
-    void 이름에_해당하는_예약_목록을_조회한다() {
+    void memberId에_해당하는_예약_목록을_조회한다() {
         // given
         ReservationTime time1 = findTimeByStartAt("15:00");
         ReservationTime time2 = findTimeByStartAt("12:00");
         Theme theme1 = new Theme(1L, "테마 이름1", "테마 설명1", "썸네일1");
         Theme theme2 = new Theme(2L, "테마 이름2", "테마 설명2", "썸네일2");
-        reservationRepository.insert(new Reservation(null, new Reserver("브라운"), new ReservationSlot(date, time1, theme1)));
-        reservationRepository.insert(new Reservation(null, new Reserver("브라운"), new ReservationSlot(date.plusDays(1), time2, theme2)));
-        reservationRepository.insert(new Reservation(null, new Reserver("구구"), new ReservationSlot(date, time2, theme2)));
+        Long memberId = insertMember("브라운");
+        reservationRepository.insert(new Reservation(null, memberId, new Reserver("브라운"), new ReservationSlot(date, time1, theme1)));
+        reservationRepository.insert(new Reservation(null, memberId, new Reserver("브라운"), new ReservationSlot(date.plusDays(1), time2, theme2)));
+        reservationRepository.insert(reservation("구구", new ReservationSlot(date, time2, theme2)));
 
         // when
-        List<Reservation> result = reservationRepository.findByReserver(new Reserver("브라운"));
+        List<Reservation> result = reservationRepository.findByMemberId(memberId);
 
         // then
         assertAll(
@@ -105,10 +110,10 @@ class ReservationRepositoryTest {
         // given
         ReservationTime time = findTimeByStartAt("15:00");
         Theme theme = new Theme(1L, "테마 이름", "테마 설명", "썸네일");
-        reservationRepository.insert(new Reservation(null, new Reserver("범위밖1"), new ReservationSlot(date.minusDays(1), time, theme)));
-        reservationRepository.insert(new Reservation(null, new Reserver("시작일"), new ReservationSlot(date, time, theme)));
-        reservationRepository.insert(new Reservation(null, new Reserver("종료일"), new ReservationSlot(date.plusDays(1), time, theme)));
-        reservationRepository.insert(new Reservation(null, new Reserver("범위밖2"), new ReservationSlot(date.plusDays(2), time, theme)));
+        reservationRepository.insert(reservation("범위밖1", new ReservationSlot(date.minusDays(1), time, theme)));
+        reservationRepository.insert(reservation("시작일", new ReservationSlot(date, time, theme)));
+        reservationRepository.insert(reservation("종료일", new ReservationSlot(date.plusDays(1), time, theme)));
+        reservationRepository.insert(reservation("범위밖2", new ReservationSlot(date.plusDays(2), time, theme)));
 
         // when
         List<Reservation> result = reservationRepository.findByDateRange(date, date.plusDays(1));
@@ -128,10 +133,11 @@ class ReservationRepositoryTest {
         ReservationTime time = findTimeByStartAt("15:00");
         ReservationTime updateTime = findTimeByStartAt("12:00");
         Theme theme = new Theme(1L, "테마 이름", "테마 설명", "썸네일");
-        Long id = reservationRepository.insert(new Reservation(null, new Reserver("브라운"), new ReservationSlot(date, time, theme))).getId();
+        Reservation savedReservation = reservationRepository.insert(reservation("브라운", new ReservationSlot(date, time, theme)));
+        Long id = savedReservation.getId();
         LocalDate updateDate = date.plusDays(1);
 
-        Reservation updatedReservation = new Reservation(id, new Reserver("브라운"), new ReservationSlot(updateDate, updateTime, theme));
+        Reservation updatedReservation = new Reservation(id, savedReservation.getMemberId(), new Reserver("브라운"), new ReservationSlot(updateDate, updateTime, theme));
 
         // when
         int updatedCount = reservationRepository.update(updatedReservation);
@@ -151,7 +157,7 @@ class ReservationRepositoryTest {
         ReservationTime time = findTimeByStartAt("12:00");
         ReservationTime otherTime = findTimeByStartAt("15:00");
         Theme theme = new Theme(1L, "테마 이름", "테마 설명", "썸네일");
-        reservationRepository.insert(new Reservation(null, new Reserver("브라운"), new ReservationSlot(date, time, theme)));
+        reservationRepository.insert(reservation("브라운", new ReservationSlot(date, time, theme)));
 
         // when
         boolean exists = reservationRepository.existsBySlot(new ReservationSlot(date, time, theme));
@@ -173,7 +179,7 @@ class ReservationRepositoryTest {
         ReservationTime time = findTimeByStartAt("12:00");
         ReservationTime otherTime = findTimeByStartAt("15:00");
         Theme theme = new Theme(1L, "테마 이름", "테마 설명", "썸네일");
-        reservationRepository.insert(new Reservation(null, new Reserver("브라운"), new ReservationSlot(date, time, theme)));
+        reservationRepository.insert(reservation("브라운", new ReservationSlot(date, time, theme)));
 
         // when
         boolean exists = reservationRepository.existsBySlotForUpdate(new ReservationSlot(date, time, theme));
@@ -194,7 +200,7 @@ class ReservationRepositoryTest {
         // given
         ReservationTime time = findTimeByStartAt("15:00");
         Theme theme = new Theme(1L, "테마 이름", "테마 설명", "썸네일");
-        Reservation reservation = new Reservation(null, new Reserver("브라운"), new ReservationSlot(date, time, theme));
+        Reservation reservation = reservation("브라운", new ReservationSlot(date, time, theme));
         reservationRepository.insert(reservation);
 
         // when
@@ -212,7 +218,7 @@ class ReservationRepositoryTest {
         // given
         ReservationTime time = findTimeByStartAt("15:00");
         Theme theme = new Theme(1L, "테마 이름", "테마 설명", "썸네일");
-        Reservation reservation = new Reservation(null, new Reserver("브라운"), new ReservationSlot(date, time, theme));
+        Reservation reservation = reservation("브라운", new ReservationSlot(date, time, theme));
         reservationRepository.insert(reservation);
 
         // when
@@ -235,5 +241,20 @@ class ReservationRepositoryTest {
                             resultSet.getObject("start_at", LocalTime.class));
                     return reservationTime;
                 }, startAt);
+    }
+
+    private Reservation reservation(String name, ReservationSlot slot) {
+        return new Reservation(null, insertMember(name), new Reserver(name), slot);
+    }
+
+    private Long insertMember(String name) {
+        String loginId = "member" + memberSequence++;
+        jdbcTemplate.update(
+                "INSERT INTO member(login_id, password, name) VALUES (?, ?, ?);",
+                loginId,
+                "password",
+                name
+        );
+        return jdbcTemplate.queryForObject("SELECT id FROM member WHERE login_id = ?;", Long.class, loginId);
     }
 }

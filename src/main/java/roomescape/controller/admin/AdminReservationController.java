@@ -5,7 +5,7 @@ import jakarta.validation.constraints.Positive;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
-import roomescape.controller.dto.request.ReservationRequest;
+import roomescape.controller.dto.request.AdminReservationRequest;
 import roomescape.controller.dto.response.ReservationResponse;
 import roomescape.domain.Reservation;
 import roomescape.service.ReservationService;
@@ -34,9 +34,9 @@ public class AdminReservationController {
     }
 
     @PostMapping
-    public ResponseEntity<ReservationResponse> createReservation(@Valid @RequestBody ReservationRequest request) {
+    public ResponseEntity<ReservationResponse> createReservation(@Valid @RequestBody AdminReservationRequest request) {
         Reservation reservation = service.createByAdmin(
-                request.name(),
+                request.memberId(),
                 request.date(),
                 request.timeId(),
                 request.themeId());

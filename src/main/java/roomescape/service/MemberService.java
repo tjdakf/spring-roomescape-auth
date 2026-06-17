@@ -7,6 +7,8 @@ import roomescape.domain.member.MemberRepository;
 import roomescape.exception.ErrorCode;
 import roomescape.exception.RoomescapeException;
 
+import java.util.List;
+
 @Service
 public class MemberService {
 
@@ -24,6 +26,15 @@ public class MemberService {
         } catch (DuplicateKeyException e) {
             throw duplicateLoginId();
         }
+    }
+
+    public List<Member> findAll() {
+        return memberRepository.findAll();
+    }
+
+    public Member findByMemberId(Long memberId) {
+        return memberRepository.findByMemberId(memberId)
+                .orElseThrow(() -> new RoomescapeException(ErrorCode.NOT_FOUND, "존재하지 않는 회원입니다."));
     }
 
     private void validateDuplicateLoginId(String loginId) {

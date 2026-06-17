@@ -44,8 +44,10 @@ class ReservationTransactionTest {
     void setup() {
         jdbcTemplate.update("DELETE FROM reservation_waiting;");
         jdbcTemplate.update("DELETE FROM reservation;");
+        jdbcTemplate.update("DELETE FROM member;");
         jdbcTemplate.update("ALTER TABLE reservation_waiting ALTER COLUMN id RESTART WITH 1;");
         jdbcTemplate.update("ALTER TABLE reservation ALTER COLUMN id RESTART WITH 1;");
+        jdbcTemplate.update("ALTER TABLE member ALTER COLUMN id RESTART WITH 1;");
     }
 
     @Test
@@ -74,7 +76,7 @@ class ReservationTransactionTest {
         failPromotedReservationInsert("구구");
 
         // when & then
-        assertThatThrownBy(() -> reservationService.updateByUser(1L, "브라운", UPDATE_DATE, 2L, NOW))
+        assertThatThrownBy(() -> reservationService.updateByUser(1L, findMemberId("브라운"), UPDATE_DATE, 2L, NOW))
                 .isInstanceOf(QueryTimeoutException.class);
 
         assertAll(
@@ -96,10 +98,11 @@ class ReservationTransactionTest {
     }
 
     private void insertReservation(Long id, String name, LocalDate date, Long timeId, Long themeId) {
+        Long memberId = insertMember(name);
         jdbcTemplate.update(
-                "INSERT INTO reservation(id, name, date, time_id, theme_id) VALUES (?, ?, ?, ?, ?);",
+                "INSERT INTO reservation(id, member_id, date, time_id, theme_id) VALUES (?, ?, ?, ?, ?);",
                 id,
-                name,
+                memberId,
                 date,
                 timeId,
                 themeId
@@ -107,10 +110,11 @@ class ReservationTransactionTest {
     }
 
     private void insertWaiting(Long id, String name, LocalDate date, Long timeId, Long themeId) {
+        Long memberId = insertMember(name);
         jdbcTemplate.update(
-                "INSERT INTO reservation_waiting(id, name, date, time_id, theme_id) VALUES (?, ?, ?, ?, ?);",
+                "INSERT INTO reservation_waiting(id, member_id, date, time_id, theme_id) VALUES (?, ?, ?, ?, ?);",
                 id,
-                name,
+                memberId,
                 date,
                 timeId,
                 themeId
@@ -121,11 +125,12 @@ class ReservationTransactionTest {
         Integer count = jdbcTemplate.queryForObject(
                 """
                         SELECT COUNT(*)
-                        FROM reservation
-                        WHERE name = ?
-                          AND date = ?
-                          AND time_id = ?
-                          AND theme_id = ?;
+                        FROM reservation AS r
+                        INNER JOIN member AS m ON r.member_id = m.id
+                        WHERE m.name = ?
+                          AND r.date = ?
+                          AND r.time_id = ?
+                          AND r.theme_id = ?;
                         """,
                 Integer.class,
                 name,
@@ -140,11 +145,12 @@ class ReservationTransactionTest {
         Integer count = jdbcTemplate.queryForObject(
                 """
                         SELECT COUNT(*)
-                        FROM reservation_waiting
-                        WHERE name = ?
-                          AND date = ?
-                          AND time_id = ?
-                          AND theme_id = ?;
+                        FROM reservation_waiting AS r
+                        INNER JOIN member AS m ON r.member_id = m.id
+                        WHERE m.name = ?
+                          AND r.date = ?
+                          AND r.time_id = ?
+                          AND r.theme_id = ?;
                         """,
                 Integer.class,
                 name,
@@ -153,5 +159,20 @@ class ReservationTransactionTest {
                 themeId
         );
         return count;
+    }
+
+    private Long insertMember(String name) {
+        String loginId = "member-" + name;
+        jdbcTemplate.update(
+                "INSERT INTO member(login_id, password, name) VALUES (?, ?, ?);",
+                loginId,
+                "password",
+                name
+        );
+        return jdbcTemplate.queryForObject("SELECT id FROM member WHERE login_id = ?;", Long.class, loginId);
+    }
+
+    private Long findMemberId(String name) {
+        return jdbcTemplate.queryForObject("SELECT id FROM member WHERE name = ?;", Long.class, name);
     }
 }

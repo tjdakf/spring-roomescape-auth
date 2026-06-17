@@ -37,6 +37,7 @@ public class ReservationRepository {
 
         return new Reservation(
                 resultSet.getLong("reservation_id"),
+                resultSet.getObject("member_id", Long.class),
                 new Reserver(resultSet.getString("username")),
                 slot
         );
@@ -50,7 +51,8 @@ public class ReservationRepository {
         String sql = """
                 SELECT
                     r.id as reservation_id,
-                    r.name as username,
+                    r.member_id,
+                    m.name as username,
                     r.date,
                     rt.id as time_id,
                     rt.start_at as time_value,
@@ -59,6 +61,8 @@ public class ReservationRepository {
                     t.description,
                     t.thumbnail
                 FROM reservation as r
+                INNER JOIN member as m
+                  ON r.member_id = m.id
                 INNER JOIN reservation_time as rt
                   ON r.time_id = rt.id
                 INNER JOIN theme as t
@@ -71,7 +75,8 @@ public class ReservationRepository {
         String sql = """
                 SELECT
                     r.id as reservation_id,
-                    r.name as username,
+                    r.member_id,
+                    m.name as username,
                     r.date,
                     rt.id as time_id,
                     rt.start_at as time_value,
@@ -80,6 +85,8 @@ public class ReservationRepository {
                     t.description,
                     t.thumbnail
                 FROM reservation as r
+                INNER JOIN member as m
+                  ON r.member_id = m.id
                 INNER JOIN reservation_time as rt
                   ON r.time_id = rt.id
                 INNER JOIN theme as t
@@ -99,7 +106,8 @@ public class ReservationRepository {
         String sql = """
                 SELECT
                     r.id as reservation_id,
-                    r.name as username,
+                    r.member_id,
+                    m.name as username,
                     r.date,
                     rt.id as time_id,
                     rt.start_at as time_value,
@@ -108,6 +116,8 @@ public class ReservationRepository {
                     t.description,
                     t.thumbnail
                 FROM reservation as r
+                INNER JOIN member as m
+                  ON r.member_id = m.id
                 JOIN reservation_time as rt ON r.time_id = rt.id
                 JOIN theme as t ON r.theme_id = t.id
                 WHERE r.date BETWEEN ? AND ?;
@@ -115,11 +125,12 @@ public class ReservationRepository {
         return jdbcTemplate.query(sql, reservationRowMapper, startDate, endDate);
     }
 
-    public List<Reservation> findByReserver(Reserver reserver) {
+    public List<Reservation> findByMemberId(Long memberId) {
         String sql = """
                 SELECT
                     r.id as reservation_id,
-                    r.name as username,
+                    r.member_id,
+                    m.name as username,
                     r.date,
                     rt.id as time_id,
                     rt.start_at as time_value,
@@ -128,26 +139,28 @@ public class ReservationRepository {
                     t.description,
                     t.thumbnail
                 FROM reservation as r
+                INNER JOIN member as m
+                  ON r.member_id = m.id
                 INNER JOIN reservation_time as rt
                   ON r.time_id = rt.id
                 INNER JOIN theme as t
                   ON r.theme_id = t.id
-                WHERE r.name = ?
+                WHERE r.member_id = ?
                 ORDER BY r.id;
                 """;
-        return jdbcTemplate.query(sql, reservationRowMapper, reserver.getName());
+        return jdbcTemplate.query(sql, reservationRowMapper, memberId);
     }
 
     public Reservation insert(Reservation reservation) {
         ReservationSlot slot = reservation.getSlot();
-        String sql = "INSERT INTO reservation(name, date, time_id, theme_id) VALUES (?, ?, ?, ?);";
+        String sql = "INSERT INTO reservation(member_id, date, time_id, theme_id) VALUES (?, ?, ?, ?);";
         KeyHolder keyHolder = new GeneratedKeyHolder();
         jdbcTemplate.update(connection -> {
             PreparedStatement pstmt = connection.prepareStatement(
                     sql,
                     new String[]{"id"}
             );
-            pstmt.setString(1, reservation.getName());
+            pstmt.setObject(1, reservation.getMemberId());
             pstmt.setObject(2, slot.getDate());
             pstmt.setLong(3, slot.getTime().getId());
             pstmt.setLong(4, slot.getTheme().getId());
@@ -164,10 +177,10 @@ public class ReservationRepository {
 
     public int update(Reservation reservation) {
         ReservationSlot slot = reservation.getSlot();
-        String sql = "UPDATE reservation SET name = ?, date = ?, time_id = ?, theme_id = ? WHERE id = ?;";
+        String sql = "UPDATE reservation SET member_id = ?, date = ?, time_id = ?, theme_id = ? WHERE id = ?;";
         return jdbcTemplate.update(
                 sql,
-                reservation.getName(),
+                reservation.getMemberId(),
                 slot.getDate(),
                 slot.getTime().getId(),
                 slot.getTheme().getId(),
@@ -204,12 +217,12 @@ public class ReservationRepository {
         return !ids.isEmpty();
     }
 
-    public boolean existsByReserverAndSlot(Reserver reserver, ReservationSlot slot) {
-        String sql = "SELECT count(*) FROM reservation WHERE name = ? AND date = ? AND time_id = ? AND theme_id = ?";
+    public boolean existsByMemberIdAndSlot(Long memberId, ReservationSlot slot) {
+        String sql = "SELECT count(*) FROM reservation WHERE member_id = ? AND date = ? AND time_id = ? AND theme_id = ?";
         Integer count = jdbcTemplate.queryForObject(
                 sql,
                 Integer.class,
-                reserver.getName(),
+                memberId,
                 slot.getDate(),
                 slot.getTime().getId(),
                 slot.getTheme().getId()

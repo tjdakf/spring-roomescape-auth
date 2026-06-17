@@ -56,7 +56,7 @@ class AdminReservationControllerTest {
     @Test
     void 관리자_예약을_생성한다() throws Exception {
         given(reservationService.createByAdmin(
-                eq("브라운"),
+                eq(1L),
                 eq(LocalDate.of(2099, 1, 1)),
                 eq(1L),
                 eq(1L)))
@@ -71,7 +71,7 @@ class AdminReservationControllerTest {
                 .andExpect(jsonPath("$.name").value("브라운"));
 
         verify(reservationService, times(1)).createByAdmin(
-                "브라운",
+                1L,
                 LocalDate.of(2099, 1, 1),
                 1L,
                 1L);
@@ -100,7 +100,7 @@ class AdminReservationControllerTest {
     private String validRequest() {
         return """
                 {
-                  "name": "브라운",
+                  "memberId": 1,
                   "date": "2099-01-01",
                   "timeId": 1,
                   "themeId": 1

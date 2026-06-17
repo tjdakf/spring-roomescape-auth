@@ -2,7 +2,6 @@ package roomescape.service;
 
 import org.springframework.stereotype.Component;
 import roomescape.domain.Reservation;
-import roomescape.domain.Reserver;
 import roomescape.exception.ErrorCode;
 import roomescape.exception.RoomescapeException;
 import roomescape.repository.ReservationRepository;
@@ -27,8 +26,8 @@ public class ReservationValidator {
         validateAvailableSlot(reservation);
     }
 
-    public void validateModifiableByUser(Reservation reservation, String name, LocalDateTime now) {
-        validateOwner(reservation, name);
+    public void validateModifiableByUser(Reservation reservation, Long memberId, LocalDateTime now) {
+        validateOwner(reservation, memberId);
         validateNotPastForModification(reservation, now);
     }
 
@@ -50,8 +49,8 @@ public class ReservationValidator {
         }
     }
 
-    private void validateOwner(Reservation reservation, String name) {
-        if (!reservation.isOwnedBy(new Reserver(name))) {
+    private void validateOwner(Reservation reservation, Long memberId) {
+        if (!reservation.isOwnedBy(memberId)) {
             throw new RoomescapeException(ErrorCode.FORBIDDEN_RESOURCE, "본인의 예약만 변경하거나 취소할 수 있습니다.");
         }
     }

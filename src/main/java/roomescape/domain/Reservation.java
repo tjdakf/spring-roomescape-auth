@@ -5,24 +5,34 @@ import java.time.LocalDateTime;
 public class Reservation {
 
     private final Long id;
+    private final Long memberId;
     private final Reserver reserver;
     private final ReservationSlot slot;
 
     public Reservation(Long id, Reserver reserver, ReservationSlot slot) {
+        this(id, null, reserver, slot);
+    }
+
+    public Reservation(Long id, Long memberId, Reserver reserver, ReservationSlot slot) {
         validateReserver(reserver);
         validateSlot(slot);
 
         this.id = id;
+        this.memberId = memberId;
         this.reserver = reserver;
         this.slot = slot;
     }
 
     public Reservation withId(Long id) {
-        return new Reservation(id, reserver, slot);
+        return new Reservation(id, memberId, reserver, slot);
     }
 
     public boolean isOwnedBy(Reserver reserver) {
         return this.reserver.equals(reserver);
+    }
+
+    public boolean isOwnedBy(Long memberId) {
+        return this.memberId != null && this.memberId.equals(memberId);
     }
 
     public boolean isPast(LocalDateTime now) {
@@ -35,6 +45,10 @@ public class Reservation {
 
     public Long getId() {
         return id;
+    }
+
+    public Long getMemberId() {
+        return memberId;
     }
 
     public Reserver getReserver() {

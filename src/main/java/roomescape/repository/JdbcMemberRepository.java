@@ -45,6 +45,12 @@ public class JdbcMemberRepository implements MemberRepository {
     }
 
     @Override
+    public List<Member> findAll() {
+        String sql = "SELECT id, login_id, password, name FROM member ORDER BY id;";
+        return jdbcTemplate.query(sql, memberRowMapper);
+    }
+
+    @Override
     public Optional<Member> findByMemberId(Long memberId) {
         String sql = "SELECT id, login_id, password, name FROM member WHERE id = ?;";
         List<Member> result = jdbcTemplate.query(sql, memberRowMapper, memberId);

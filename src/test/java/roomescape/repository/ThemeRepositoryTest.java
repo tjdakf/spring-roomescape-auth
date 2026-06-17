@@ -90,16 +90,19 @@ class ThemeRepositoryTest {
         // given
         Theme theme1 = themeRepository.insert(new Theme(null, "테마1", "설명1", "썸네일1"));
         Theme theme2 = themeRepository.insert(new Theme(null, "테마2", "설명2", "썸네일2"));
+        Long brownId = insertMember("brown", "브라운");
+        Long guguId = insertMember("gugu", "구구");
+        Long pobiId = insertMember("pobi", "포비");
 
         jdbcTemplate.update(
-                "INSERT INTO reservation(name, date, time_id, theme_id) VALUES (?, ?, ?, ?)",
-                "브라운", LocalDate.of(2026, 5, 1), 1L, theme1.getId());
+                "INSERT INTO reservation(member_id, date, time_id, theme_id) VALUES (?, ?, ?, ?)",
+                brownId, LocalDate.of(2026, 5, 1), 1L, theme1.getId());
         jdbcTemplate.update(
-                "INSERT INTO reservation(name, date, time_id, theme_id) VALUES (?, ?, ?, ?)",
-                "구구", LocalDate.of(2026, 5, 1), 2L, theme2.getId());
+                "INSERT INTO reservation(member_id, date, time_id, theme_id) VALUES (?, ?, ?, ?)",
+                guguId, LocalDate.of(2026, 5, 1), 2L, theme2.getId());
         jdbcTemplate.update(
-                "INSERT INTO reservation(name, date, time_id, theme_id) VALUES (?, ?, ?, ?)",
-                "포비", LocalDate.of(2026, 5, 2), 3L, theme2.getId());
+                "INSERT INTO reservation(member_id, date, time_id, theme_id) VALUES (?, ?, ?, ?)",
+                pobiId, LocalDate.of(2026, 5, 2), 3L, theme2.getId());
 
         // when
         PopularThemeCondition condition = new PopularThemeCondition(
@@ -119,5 +122,15 @@ class ThemeRepositoryTest {
                 () -> assertThat(result.get(0).getReservationCount()).isEqualTo(2),
                 () -> assertThat(result.get(1).getTheme().getId()).isEqualTo(theme1.getId()),
                 () -> assertThat(result.get(1).getReservationCount()).isEqualTo(1));
+    }
+
+    private Long insertMember(String loginId, String name) {
+        jdbcTemplate.update(
+                "INSERT INTO member(login_id, password, name) VALUES (?, ?, ?);",
+                loginId,
+                "password",
+                name
+        );
+        return jdbcTemplate.queryForObject("SELECT id FROM member WHERE login_id = ?;", Long.class, loginId);
     }
 }

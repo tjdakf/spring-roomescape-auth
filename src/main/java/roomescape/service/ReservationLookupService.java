@@ -24,11 +24,11 @@ public class ReservationLookupService {
         this.reservationWaitingService = reservationWaitingService;
     }
 
-    public List<ReservationStatus> findByName(String name) {
+    public List<ReservationStatus> findByMemberId(Long memberId) {
         return Stream.concat(
-                        reservationService.findByName(name).stream()
+                        reservationService.findByMemberId(memberId).stream()
                                 .map(ReservationStatus::reserved),
-                        reservationWaitingService.findByName(name).stream()
+                        reservationWaitingService.findByMemberId(memberId).stream()
                                 .map(ReservationStatus::waiting))
                 .sorted(Comparator
                         .comparing(ReservationStatus::date, Comparator.reverseOrder())

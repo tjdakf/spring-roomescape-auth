@@ -5,6 +5,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InOrder;
 import org.springframework.dao.QueryTimeoutException;
 import roomescape.domain.*;
+import roomescape.domain.member.Member;
 import roomescape.exception.ErrorCode;
 import roomescape.exception.RoomescapeException;
 import roomescape.repository.ReservationRepository;
@@ -31,33 +32,36 @@ class ReservationServiceTest {
     private final ThemeRepository themeRepository = mock();
     private final ReservationWaitingRepository waitingRepository = mock();
     private final ReservationValidator reservationValidator = new ReservationValidator(reservationRepository);
+    private final MemberService memberService = mock();
     private final ReservationService service = new ReservationService(
             reservationRepository,
             reservationTimeRepository,
             themeRepository,
             waitingRepository,
-            reservationValidator);
+            reservationValidator,
+            memberService);
 
     private final LocalDate date = LocalDate.now().plusDays(1);
     private final LocalDateTime now = LocalDateTime.now();
 
     @Test
-    void 이름으로_예약_목록을_조회한다() {
+    void memberId로_예약_목록을_조회한다() {
         // given
+        Long memberId = 1L;
         String name = "브라운";
         ReservationTime time = time(1L);
         List<Reservation> reservations = List.of(
                 reservation(1L, name, date, time),
                 reservation(2L, name, date.plusDays(1), time));
-        when(reservationRepository.findByReserver(new Reserver(name)))
+        when(reservationRepository.findByMemberId(memberId))
                 .thenReturn(reservations);
 
         // when
-        List<Reservation> result = service.findByName(name);
+        List<Reservation> result = service.findByMemberId(memberId);
 
         // then
         assertThat(result).isEqualTo(reservations);
-        verify(reservationRepository, times(1)).findByReserver(new Reserver(name));
+        verify(reservationRepository, times(1)).findByMemberId(memberId);
         verifyNoMoreInteractions(reservationRepository, reservationTimeRepository, themeRepository);
     }
 
@@ -84,6 +88,7 @@ class ReservationServiceTest {
     void 사용자_예약을_생성한다() {
         // given
         Long id = 1L;
+        Long memberId = 1L;
         String name = "브라운";
         Long timeId = 1L;
         Long themeId = 1L;
@@ -100,7 +105,7 @@ class ReservationServiceTest {
                 .thenReturn(savedReservation);
 
         // when
-        Reservation result = service.createByUser(name, date, timeId, themeId, now);
+        Reservation result = service.createByUser(1L, name, date, timeId, themeId, now);
 
         // then
         ArgumentCaptor<Reservation> captor = ArgumentCaptor.forClass(Reservation.class);
@@ -123,6 +128,7 @@ class ReservationServiceTest {
     void 관리자_예약을_생성한다() {
         // given
         Long id = 1L;
+        Long memberId = 1L;
         String name = "브라운";
         Long timeId = 1L;
         Long themeId = 1L;
@@ -136,19 +142,22 @@ class ReservationServiceTest {
                 .thenReturn(false);
         when(themeRepository.findById(themeId))
                 .thenReturn(Optional.of(theme));
+        when(memberService.findByMemberId(memberId))
+                .thenReturn(new Member(memberId, "brown", "password", name));
         when(reservationRepository.insert(any(Reservation.class)))
                 .thenReturn(savedReservation);
 
         // when
-        Reservation result = service.createByAdmin(name, pastDate, timeId, themeId);
+        Reservation result = service.createByAdmin(memberId, pastDate, timeId, themeId);
 
         // then
         assertThat(result).isEqualTo(savedReservation);
+        verify(memberService, times(1)).findByMemberId(memberId);
         verify(reservationTimeRepository, times(1)).findById(timeId);
         verify(reservationRepository, times(1)).existsBySlot(any(ReservationSlot.class));
         verify(themeRepository, times(1)).findById(themeId);
         verify(reservationRepository, times(1)).insert(any(Reservation.class));
-        verifyNoMoreInteractions(reservationRepository, reservationTimeRepository, themeRepository);
+        verifyNoMoreInteractions(reservationRepository, reservationTimeRepository, themeRepository, memberService);
     }
 
     @Test
@@ -165,7 +174,7 @@ class ReservationServiceTest {
                 .thenReturn(Optional.of(theme));
 
         // when & then
-        assertThatThrownBy(() -> service.createByUser("브라운", pastDate, timeId, themeId, now))
+        assertThatThrownBy(() -> service.createByUser(1L, "브라운", pastDate, timeId, themeId, now))
                 .isInstanceOf(RoomescapeException.class)
                 .hasFieldOrPropertyWithValue("errorCode", ErrorCode.PAST_SCHEDULE)
                 .hasMessage("이미 지난 시간으로는 예약할 수 없습니다.");
@@ -189,7 +198,7 @@ class ReservationServiceTest {
                 .thenReturn(Optional.empty());
 
         // when
-        service.deleteByUser(id, name, now);
+        service.deleteByUser(id, 1L, now);
 
         // then
         verify(reservationRepository, times(1)).findByIdForUpdate(id);
@@ -216,7 +225,7 @@ class ReservationServiceTest {
                 .thenAnswer(invocation -> invocation.<Reservation>getArgument(0).withId(3L));
 
         // when
-        service.deleteByUser(id, name, now);
+        service.deleteByUser(id, 1L, now);
 
         // then
         ArgumentCaptor<Reservation> captor = ArgumentCaptor.forClass(Reservation.class);
@@ -378,7 +387,7 @@ class ReservationServiceTest {
                 .thenReturn(1);
 
         // when
-        Reservation result = service.updateByUser(id, name, updateDate, timeId, now);
+        Reservation result = service.updateByUser(id, 1L, updateDate, timeId, now);
 
         // then
         ArgumentCaptor<Reservation> captor = ArgumentCaptor.forClass(Reservation.class);
@@ -431,7 +440,7 @@ class ReservationServiceTest {
                 .thenAnswer(invocation -> invocation.<Reservation>getArgument(0).withId(3L));
 
         // when
-        Reservation result = service.updateByUser(id, name, updateDate, timeId, now);
+        Reservation result = service.updateByUser(id, 1L, updateDate, timeId, now);
 
         // then
         ArgumentCaptor<Reservation> updateCaptor = ArgumentCaptor.forClass(Reservation.class);
@@ -476,7 +485,7 @@ class ReservationServiceTest {
                 .thenReturn(1);
 
         // when
-        Reservation result = service.updateByUser(id, name, updateDate, null, now);
+        Reservation result = service.updateByUser(id, 1L, updateDate, null, now);
 
         // then
         assertAll(
@@ -499,7 +508,7 @@ class ReservationServiceTest {
                 .thenReturn(Optional.empty());
 
         // when & then
-        assertThatThrownBy(() -> service.updateByUser(id, "브라운", date, 1L, now))
+        assertThatThrownBy(() -> service.updateByUser(id, 1L, date, 1L, now))
                 .isInstanceOf(RoomescapeException.class)
                 .hasFieldOrPropertyWithValue("errorCode", ErrorCode.NOT_FOUND)
                 .hasMessage("존재하지 않는 예약입니다.");
@@ -523,7 +532,7 @@ class ReservationServiceTest {
                 .thenReturn(Optional.empty());
 
         // when & then
-        assertThatThrownBy(() -> service.updateByUser(id, name, date.plusDays(1), timeId, now))
+        assertThatThrownBy(() -> service.updateByUser(id, 1L, date.plusDays(1), timeId, now))
                 .isInstanceOf(RoomescapeException.class)
                 .hasFieldOrPropertyWithValue("errorCode", ErrorCode.NOT_FOUND)
                 .hasMessage("존재하지 않는 예약 시간입니다.");
@@ -546,12 +555,13 @@ class ReservationServiceTest {
     private Reservation reservation(Long id, String name, LocalDate date, ReservationTime time, Theme theme) {
         return new Reservation(
                 id,
+                1L,
                 new Reserver(name),
                 new ReservationSlot(date, time, theme));
     }
 
     private ReservationWaiting waiting(Long id, String name, ReservationSlot slot) {
-        return new ReservationWaiting(id, new Reserver(name), slot);
+        return new ReservationWaiting(id, 1L, new Reserver(name), slot);
     }
 
     private ReservationTime time(Long id) {

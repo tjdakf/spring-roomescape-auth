@@ -1,14 +1,17 @@
 package roomescape.controller.user;
 
 import jakarta.validation.Valid;
-import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Positive;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+import roomescape.auth.LoginMember;
+import roomescape.auth.LoginMemberInfo;
 import roomescape.controller.dto.request.ReservationWaitingRequest;
 import roomescape.controller.dto.response.ReservationWaitingResponse;
+import roomescape.domain.member.Member;
 import roomescape.domain.WaitingWithTurn;
+import roomescape.service.AuthService;
 import roomescape.service.ReservationWaitingService;
 
 import java.net.URI;
@@ -21,17 +24,22 @@ import java.util.List;
 public class ReservationWaitingController {
 
     private final ReservationWaitingService service;
+    private final AuthService authService;
 
-    public ReservationWaitingController(ReservationWaitingService service) {
+    public ReservationWaitingController(ReservationWaitingService service, AuthService authService) {
         this.service = service;
+        this.authService = authService;
     }
 
     @PostMapping
     public ResponseEntity<ReservationWaitingResponse> createReservationWaiting(
+            @LoginMember LoginMemberInfo loginMemberInfo,
             @Valid @RequestBody ReservationWaitingRequest request
     ) {
+        Member member = authService.findLoginMember(loginMemberInfo.memberId());
         WaitingWithTurn waitingWithTurn = service.create(
-                request.name(),
+                member.getMemberId(),
+                member.getName(),
                 request.date(),
                 request.timeId(),
                 request.themeId(),
@@ -43,9 +51,9 @@ public class ReservationWaitingController {
 
     @GetMapping
     public ResponseEntity<List<ReservationWaitingResponse>> getReservationWaitingsByName(
-            @RequestParam("name") @NotBlank(message = "name은 비어 있을 수 없습니다.") String name
+            @LoginMember LoginMemberInfo loginMemberInfo
     ) {
-        List<ReservationWaitingResponse> reservationWaitings = service.findByName(name).stream()
+        List<ReservationWaitingResponse> reservationWaitings = service.findByMemberId(loginMemberInfo.memberId()).stream()
                 .map(ReservationWaitingResponse::from)
                 .toList();
         return ResponseEntity.ok(reservationWaitings);
@@ -54,9 +62,9 @@ public class ReservationWaitingController {
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteWaiting(
             @PathVariable @Positive(message = "id는 양수이어야 합니다.") Long id,
-            @RequestParam("name") @NotBlank(message = "name은 비어 있을 수 없습니다.") String name
+            @LoginMember LoginMemberInfo loginMemberInfo
     ) {
-        service.deleteByUser(id, name, LocalDateTime.now());
+        service.deleteByUser(id, loginMemberInfo.memberId(), LocalDateTime.now());
         return ResponseEntity.noContent().build();
     }
 }

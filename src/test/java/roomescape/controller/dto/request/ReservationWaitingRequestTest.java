@@ -19,35 +19,10 @@ class ReservationWaitingRequestTest {
     private final LocalDate date = LocalDate.parse("2026-05-02");
 
     @Test
-    void 이름이_null이면_예외() {
-        // when
-        Set<ConstraintViolation<ReservationWaitingRequest>> result = validator.validate(
-                new ReservationWaitingRequest(null, date, 1L, 1L));
-
-        // then
-        assertThat(result).extracting(ConstraintViolation::getMessage)
-                .containsExactly("name은 비어 있을 수 없습니다.");
-    }
-
-    @Test
-    void 이름이_255자를_초과하면_예외() {
-        // given
-        String name = "a".repeat(256);
-
-        // when
-        Set<ConstraintViolation<ReservationWaitingRequest>> result = validator.validate(
-                new ReservationWaitingRequest(name, date, 1L, 1L));
-
-        // then
-        assertThat(result).extracting(ConstraintViolation::getMessage)
-                .containsExactly("name은 255자를 넘을 수 없습니다.");
-    }
-
-    @Test
     void 날짜가_null이면_예외() {
         // when
         Set<ConstraintViolation<ReservationWaitingRequest>> result = validator.validate(
-                new ReservationWaitingRequest("구구", null, 1L, 1L));
+                new ReservationWaitingRequest(null, 1L, 1L));
 
         // then
         assertThat(result).extracting(ConstraintViolation::getMessage)
@@ -58,7 +33,7 @@ class ReservationWaitingRequestTest {
     void timeId가_null이면_예외() {
         // when
         Set<ConstraintViolation<ReservationWaitingRequest>> result = validator.validate(
-                new ReservationWaitingRequest("캐리", date, null, 1L));
+                new ReservationWaitingRequest(date, null, 1L));
 
         // then
         assertThat(result).extracting(ConstraintViolation::getMessage)
@@ -70,7 +45,7 @@ class ReservationWaitingRequestTest {
     void timeId가_양수가_아니면_예외(Long timeId) {
         // when
         Set<ConstraintViolation<ReservationWaitingRequest>> result = validator.validate(
-                new ReservationWaitingRequest("홍길동", date, timeId, 1L));
+                new ReservationWaitingRequest(date, timeId, 1L));
 
         // then
         assertThat(result).extracting(ConstraintViolation::getMessage)
@@ -81,7 +56,7 @@ class ReservationWaitingRequestTest {
     void themeId가_null이면_예외() {
         // when
         Set<ConstraintViolation<ReservationWaitingRequest>> result = validator.validate(
-                new ReservationWaitingRequest("캐리", date, 1L, null));
+                new ReservationWaitingRequest(date, 1L, null));
 
         // then
         assertThat(result).extracting(ConstraintViolation::getMessage)
@@ -93,7 +68,7 @@ class ReservationWaitingRequestTest {
     void themeId가_양수가_아니면_예외(Long themeId) {
         // when
         Set<ConstraintViolation<ReservationWaitingRequest>> result = validator.validate(
-                new ReservationWaitingRequest("홍길동", date, 1L, themeId));
+                new ReservationWaitingRequest(date, 1L, themeId));
 
         // then
         assertThat(result).extracting(ConstraintViolation::getMessage)
@@ -103,17 +78,15 @@ class ReservationWaitingRequestTest {
     @Test
     void 정상_생성_테스트() {
         // given
-        String name = "홍길동";
         Long timeId = 1L;
         Long themeId = 1L;
 
         // when
-        ReservationWaitingRequest result = new ReservationWaitingRequest(name, date, timeId, themeId);
+        ReservationWaitingRequest result = new ReservationWaitingRequest(date, timeId, themeId);
 
         // then
         assertAll(
                 () -> assertThat(validator.validate(result)).isEmpty(),
-                () -> assertThat(result.name()).isEqualTo(name),
                 () -> assertThat(result.date()).isEqualTo(date),
                 () -> assertThat(result.timeId()).isEqualTo(timeId),
                 () -> assertThat(result.themeId()).isEqualTo(themeId));

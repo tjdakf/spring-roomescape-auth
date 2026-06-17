@@ -39,8 +39,8 @@ public class ReservationWaitingService {
         this.reservationWaitingValidator = reservationWaitingValidator;
     }
 
-    public List<WaitingWithTurn> findByName(String name) {
-        return reservationWaitingRepository.findByReserverWithTurn(new Reserver(name));
+    public List<WaitingWithTurn> findByMemberId(Long memberId) {
+        return reservationWaitingRepository.findByMemberIdWithTurn(memberId);
     }
 
     public List<WaitingWithTurn> findByDateRange(LocalDate startDate, LocalDate endDate) {
@@ -48,18 +48,18 @@ public class ReservationWaitingService {
     }
 
     @Transactional
-    public WaitingWithTurn create(String name, LocalDate date, Long timeId, Long themeId, LocalDateTime now) {
+    public WaitingWithTurn create(Long memberId, String name, LocalDate date, Long timeId, Long themeId, LocalDateTime now) {
         ReservationSlot slot = new ReservationSlot(date, findReservationTime(timeId), findTheme(themeId));
-        ReservationWaiting waiting = new ReservationWaiting(null, new Reserver(name), slot);
+        ReservationWaiting waiting = new ReservationWaiting(null, memberId, new Reserver(name), slot);
         reservationWaitingValidator.validateWaiting(waiting, now);
 
         return insertReservationWaiting(waiting);
     }
 
     @Transactional
-    public void deleteByUser(Long id, String name, LocalDateTime now) {
+    public void deleteByUser(Long id, Long memberId, LocalDateTime now) {
         ReservationWaiting waiting = findWaiting(id);
-        reservationWaitingValidator.validateModifiable(waiting, name, now);
+        reservationWaitingValidator.validateModifiable(waiting, memberId, now);
         deleteWaiting(id);
     }
 

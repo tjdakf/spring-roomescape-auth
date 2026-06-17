@@ -9,6 +9,8 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.RequestPostProcessor;
 import roomescape.auth.SessionConstants;
 import roomescape.domain.*;
+import roomescape.domain.member.Member;
+import roomescape.service.AuthService;
 import roomescape.service.ReservationWaitingService;
 
 import java.time.LocalDate;
@@ -31,9 +33,15 @@ class ReservationWaitingControllerTest {
     @MockitoBean
     private ReservationWaitingService reservationWaitingService;
 
+    @MockitoBean
+    private AuthService authService;
+
     @Test
     void 예약_대기를_생성한다() throws Exception {
+        given(authService.findLoginMember(1L))
+                .willReturn(new Member(1L, "brown", "password", "브라운"));
         given(reservationWaitingService.create(
+                eq(1L),
                 eq("브라운"),
                 eq(LocalDate.of(2099, 1, 1)),
                 eq(1L),
@@ -57,22 +65,23 @@ class ReservationWaitingControllerTest {
                 .andExpect(jsonPath("$.turn").value(2));
 
         verify(reservationWaitingService, times(1)).create(
+                eq(1L),
                 eq("브라운"),
                 eq(LocalDate.of(2099, 1, 1)),
                 eq(1L),
                 eq(1L),
                 any(LocalDateTime.class));
-        verifyNoMoreInteractions(reservationWaitingService);
+        verify(authService, times(1)).findLoginMember(1L);
+        verifyNoMoreInteractions(reservationWaitingService, authService);
     }
 
     @Test
     void 이름으로_예약_대기_목록을_조회한다() throws Exception {
-        given(reservationWaitingService.findByName(eq("브라운")))
+        given(reservationWaitingService.findByMemberId(eq(1L)))
                 .willReturn(List.of(waitingResult()));
 
         mockMvc.perform(get("/waitings")
-                        .with(loginMember())
-                        .param("name", "브라운"))
+                        .with(loginMember()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].id").value(1))
                 .andExpect(jsonPath("$[0].name").value("브라운"))
@@ -82,18 +91,17 @@ class ReservationWaitingControllerTest {
                 .andExpect(jsonPath("$[0].theme.name").value("테마"))
                 .andExpect(jsonPath("$[0].turn").value(2));
 
-        verify(reservationWaitingService, times(1)).findByName("브라운");
+        verify(reservationWaitingService, times(1)).findByMemberId(1L);
         verifyNoMoreInteractions(reservationWaitingService);
     }
 
     @Test
     void 예약_대기를_취소한다() throws Exception {
         mockMvc.perform(delete("/waitings/1")
-                        .with(loginMember())
-                        .param("name", "브라운"))
+                        .with(loginMember()))
                 .andExpect(status().isNoContent());
 
-        verify(reservationWaitingService, times(1)).deleteByUser(eq(1L), eq("브라운"), any(LocalDateTime.class));
+        verify(reservationWaitingService, times(1)).deleteByUser(eq(1L), eq(1L), any(LocalDateTime.class));
         verifyNoMoreInteractions(reservationWaitingService);
     }
 
@@ -101,9 +109,8 @@ class ReservationWaitingControllerTest {
     void 예약_대기_생성시_유효하지_않은_입력값이면_에러_응답() throws Exception {
         String request = """
                 {
-                  "name": "",
                   "date": "2099-01-01",
-                  "timeId": 1,
+                  "timeId": 0,
                   "themeId": 1
                 }
                 """;
@@ -114,7 +121,7 @@ class ReservationWaitingControllerTest {
                         .content(request))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.code").value("INVALID_INPUT"))
-                .andExpect(jsonPath("$.detail").value("name은 비어 있을 수 없습니다."));
+                .andExpect(jsonPath("$.detail").value("timeId는 양수이어야 합니다."));
 
         verifyNoMoreInteractions(reservationWaitingService);
     }
@@ -123,7 +130,6 @@ class ReservationWaitingControllerTest {
     void 예약_대기_생성시_요청_본문_형식이_올바르지_않으면_에러_응답() throws Exception {
         String request = """
                 {
-                  "name": "브라운",
                   "date": "2099-01-01",
                   "timeId": "abc",
                   "themeId": 1
@@ -141,23 +147,9 @@ class ReservationWaitingControllerTest {
         verifyNoMoreInteractions(reservationWaitingService);
     }
 
-    @Test
-    void 예약_대기_조회시_이름이_비어있으면_에러_응답() throws Exception {
-        mockMvc.perform(get("/waitings")
-                        .with(loginMember())
-                        .param("name", ""))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.code").value("INVALID_INPUT"))
-                .andExpect(jsonPath("$.detail").value("name은 비어 있을 수 없습니다."));
-
-        verifyNoMoreInteractions(reservationWaitingService);
-    }
-
-    @Test
     void 예약_대기_취소시_id가_양수가_아니면_에러_응답() throws Exception {
         mockMvc.perform(delete("/waitings/0")
-                        .with(loginMember())
-                        .param("name", "브라운"))
+                        .with(loginMember()))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.code").value("INVALID_INPUT"))
                 .andExpect(jsonPath("$.detail").value("id는 양수이어야 합니다."));
@@ -179,7 +171,6 @@ class ReservationWaitingControllerTest {
     private String validRequest() {
         return """
                 {
-                  "name": "브라운",
                   "date": "2099-01-01",
                   "timeId": 1,
                   "themeId": 1

@@ -38,6 +38,7 @@ public class ReservationWaitingRepository {
 
         return new ReservationWaiting(
                 resultSet.getLong("reservation_waiting_id"),
+                resultSet.getObject("member_id", Long.class),
                 new Reserver(resultSet.getString("username")),
                 slot
         );
@@ -55,11 +56,12 @@ public class ReservationWaitingRepository {
         this.jdbcTemplate = jdbcTemplate;
     }
 
-    public List<WaitingWithTurn> findByReserverWithTurn(Reserver reserver) {
+    public List<WaitingWithTurn> findByMemberIdWithTurn(Long memberId) {
         String sql = """
                 SELECT
                     r.id AS reservation_waiting_id,
-                    r.name AS username,
+                    r.member_id,
+                    m.name AS username,
                     r.date,
                     rt.id AS time_id,
                     rt.start_at AS time_value,
@@ -82,21 +84,24 @@ public class ReservationWaitingRepository {
                           )
                     ) + 1 AS turn
                 FROM reservation_waiting AS r
+                INNER JOIN member AS m
+                    ON r.member_id = m.id
                 INNER JOIN reservation_time AS rt
                     ON r.time_id = rt.id
                 INNER JOIN theme AS t
                     ON r.theme_id = t.id
-                WHERE r.name = ?
+                WHERE r.member_id = ?
                 ORDER BY r.id;
                 """;
-        return jdbcTemplate.query(sql, waitingWithTurnRowMapper, reserver.getName());
+        return jdbcTemplate.query(sql, waitingWithTurnRowMapper, memberId);
     }
 
     public List<WaitingWithTurn> findByDateRange(LocalDate startDate, LocalDate endDate) {
         String sql = """
                 SELECT
                     r.id AS reservation_waiting_id,
-                    r.name AS username,
+                    r.member_id,
+                    m.name AS username,
                     r.date,
                     rt.id AS time_id,
                     rt.start_at AS time_value,
@@ -119,6 +124,7 @@ public class ReservationWaitingRepository {
                           )
                     ) + 1 AS turn
                 FROM reservation_waiting AS r
+                INNER JOIN member AS m ON r.member_id = m.id
                 JOIN reservation_time AS rt ON r.time_id = rt.id
                 JOIN theme AS t ON r.theme_id = t.id
                 WHERE r.date BETWEEN ? AND ?;
@@ -128,13 +134,13 @@ public class ReservationWaitingRepository {
 
     public ReservationWaiting insert(ReservationWaiting waiting) {
         ReservationSlot slot = waiting.getSlot();
-        String sql = "INSERT INTO reservation_waiting(name, date, time_id, theme_id) VALUES (?, ?, ?, ?);";
+        String sql = "INSERT INTO reservation_waiting(member_id, date, time_id, theme_id) VALUES (?, ?, ?, ?);";
         KeyHolder keyHolder = new GeneratedKeyHolder();
         jdbcTemplate.update(connection -> {
             PreparedStatement pstmt = connection.prepareStatement(
                     sql,
                     new String[]{"id"});
-            pstmt.setString(1, waiting.getName());
+            pstmt.setObject(1, waiting.getMemberId());
             pstmt.setObject(2, slot.getDate());
             pstmt.setLong(3, slot.getTime().getId());
             pstmt.setLong(4, slot.getTheme().getId());
@@ -145,19 +151,20 @@ public class ReservationWaitingRepository {
         return waiting.withId(id);
     }
 
-    public boolean existsByReserverAndSlot(Reserver reserver, ReservationSlot slot) {
+    public boolean existsByMemberIdAndSlot(Long memberId, ReservationSlot slot) {
         String sql = """
                 SELECT
                     count(*)
                 FROM
                     reservation_waiting
-                WHERE name = ?
+                WHERE member_id = ?
                   AND date = ?
                   AND time_id = ?
                   AND theme_id = ?
                 """;
         Integer count = jdbcTemplate.queryForObject(sql,
-                Integer.class, reserver.getName(),
+                Integer.class,
+                memberId,
                 slot.getDate(),
                 slot.getTime().getId(),
                 slot.getTheme().getId()
@@ -169,7 +176,8 @@ public class ReservationWaitingRepository {
         String sql = """
                 SELECT
                     r.id as reservation_waiting_id,
-                    r.name as username,
+                    r.member_id,
+                    m.name as username,
                     r.date,
                     rt.id as time_id,
                     rt.start_at as time_value,
@@ -178,6 +186,8 @@ public class ReservationWaitingRepository {
                     t.description,
                     t.thumbnail
                 FROM reservation_waiting as r
+                INNER JOIN member as m
+                  ON r.member_id = m.id
                 INNER JOIN reservation_time as rt
                   ON r.time_id = rt.id
                 INNER JOIN theme as t
@@ -192,7 +202,8 @@ public class ReservationWaitingRepository {
         String sql = """
                 SELECT
                     r.id AS reservation_waiting_id,
-                    r.name AS username,
+                    r.member_id,
+                    m.name AS username,
                     r.date,
                     rt.id AS time_id,
                     rt.start_at AS time_value,
@@ -215,6 +226,8 @@ public class ReservationWaitingRepository {
                           )
                     ) + 1 AS turn
                 FROM reservation_waiting AS r
+                INNER JOIN member AS m
+                    ON r.member_id = m.id
                 INNER JOIN reservation_time AS rt
                     ON r.time_id = rt.id
                 INNER JOIN theme AS t

@@ -91,17 +91,21 @@ class ReservationValidatorTest {
 
         // when & then
         assertThatNoException()
-                .isThrownBy(() -> validator.validateModifiableByUser(reservation, "브라운", now));
+                .isThrownBy(() -> validator.validateModifiableByUser(reservation, 1L, now));
         verifyNoMoreInteractions(reservationRepository);
     }
 
     @Test
     void 본인의_예약이_아니면_변경_가능_검증시_예외가_발생한다() {
         // given
-        Reservation reservation = reservation("구구", now.toLocalDate().plusDays(1), time);
+        Reservation reservation = new Reservation(
+                1L,
+                2L,
+                new Reserver("구구"),
+                new ReservationSlot(now.toLocalDate().plusDays(1), time, theme));
 
         // when & then
-        assertThatThrownBy(() -> validator.validateModifiableByUser(reservation, "브라운", now))
+        assertThatThrownBy(() -> validator.validateModifiableByUser(reservation, 1L, now))
                 .isInstanceOf(RoomescapeException.class)
                 .hasFieldOrPropertyWithValue("errorCode", ErrorCode.FORBIDDEN_RESOURCE)
                 .hasMessage("본인의 예약만 변경하거나 취소할 수 있습니다.");
@@ -114,7 +118,7 @@ class ReservationValidatorTest {
         Reservation reservation = reservation("브라운", now.toLocalDate().minusDays(1), time);
 
         // when & then
-        assertThatThrownBy(() -> validator.validateModifiableByUser(reservation, "브라운", now))
+        assertThatThrownBy(() -> validator.validateModifiableByUser(reservation, 1L, now))
                 .isInstanceOf(RoomescapeException.class)
                 .hasFieldOrPropertyWithValue("errorCode", ErrorCode.PAST_RESOURCE_LOCKED)
                 .hasMessage("이미 지난 예약은 변경하거나 취소할 수 없습니다.");
@@ -184,6 +188,6 @@ class ReservationValidatorTest {
     }
 
     private Reservation reservation(String name, LocalDate date, ReservationTime time) {
-        return new Reservation(1L, new Reserver(name), new ReservationSlot(date, time, theme));
+        return new Reservation(1L, 1L, new Reserver(name), new ReservationSlot(date, time, theme));
     }
 }
