@@ -6,33 +6,29 @@ public class ReservationWaiting {
 
     private final Long id;
     private final Long memberId;
-    private final Reserver reserver;
+    private final String name;
     private final ReservationSlot slot;
 
-    public ReservationWaiting(Long id, Reserver reserver, ReservationSlot slot) {
-        this(id, null, reserver, slot);
+    public ReservationWaiting(Long id, String name, ReservationSlot slot) {
+        this(id, null, name, slot);
     }
 
-    public ReservationWaiting(Long id, Long memberId, Reserver reserver, ReservationSlot slot) {
-        validateReserver(reserver);
+    public ReservationWaiting(Long id, Long memberId, String name, ReservationSlot slot) {
+        validateName(name);
         validateSlot(slot);
 
         this.id = id;
         this.memberId = memberId;
-        this.reserver = reserver;
+        this.name = name;
         this.slot = slot;
     }
 
     public ReservationWaiting withId(Long id) {
-        return new ReservationWaiting(id, memberId, reserver, slot);
+        return new ReservationWaiting(id, memberId, name, slot);
     }
 
     public boolean isPast(LocalDateTime now) {
         return slot.isPast(now);
-    }
-
-    public boolean isOwnedBy(Reserver reserver) {
-        return this.reserver.equals(reserver);
     }
 
     public boolean isOwnedBy(Long memberId) {
@@ -40,7 +36,7 @@ public class ReservationWaiting {
     }
 
     public Reservation promoteToReservation() {
-        return new Reservation(null, memberId, reserver, slot);
+        return new Reservation(null, memberId, name, slot);
     }
 
     public ReservationSlot getSlot() {
@@ -55,17 +51,13 @@ public class ReservationWaiting {
         return memberId;
     }
 
-    public Reserver getReserver() {
-        return reserver;
-    }
-
     public String getName() {
-        return reserver.getName();
+        return name;
     }
 
-    private void validateReserver(Reserver reserver) {
-        if (reserver == null) {
-            throw new IllegalArgumentException("reserver는 비어 있을 수 없습니다.");
+    private void validateName(String name) {
+        if (name == null || name.isBlank()) {
+            throw new IllegalArgumentException("예약자 이름은 비어 있을 수 없습니다.");
         }
     }
 

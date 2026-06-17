@@ -6,7 +6,6 @@ import org.springframework.transaction.annotation.Transactional;
 import roomescape.domain.ReservationSlot;
 import roomescape.domain.ReservationTime;
 import roomescape.domain.ReservationWaiting;
-import roomescape.domain.Reserver;
 import roomescape.domain.Theme;
 import roomescape.domain.WaitingWithTurn;
 import roomescape.exception.ErrorCode;
@@ -50,7 +49,7 @@ public class ReservationWaitingService {
     @Transactional
     public WaitingWithTurn create(Long memberId, String name, LocalDate date, Long timeId, Long themeId, LocalDateTime now) {
         ReservationSlot slot = new ReservationSlot(date, findReservationTime(timeId), findTheme(themeId));
-        ReservationWaiting waiting = new ReservationWaiting(null, memberId, new Reserver(name), slot);
+        ReservationWaiting waiting = new ReservationWaiting(null, memberId, name, slot);
         reservationWaitingValidator.validateWaiting(waiting, now);
 
         return insertReservationWaiting(waiting);

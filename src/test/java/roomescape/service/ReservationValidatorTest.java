@@ -4,7 +4,6 @@ import org.junit.jupiter.api.Test;
 import roomescape.domain.Reservation;
 import roomescape.domain.ReservationSlot;
 import roomescape.domain.ReservationTime;
-import roomescape.domain.Reserver;
 import roomescape.domain.Theme;
 import roomescape.exception.ErrorCode;
 import roomescape.exception.RoomescapeException;
@@ -101,7 +100,7 @@ class ReservationValidatorTest {
         Reservation reservation = new Reservation(
                 1L,
                 2L,
-                new Reserver("구구"),
+                "구구",
                 new ReservationSlot(now.toLocalDate().plusDays(1), time, theme));
 
         // when & then
@@ -188,6 +187,6 @@ class ReservationValidatorTest {
     }
 
     private Reservation reservation(String name, LocalDate date, ReservationTime time) {
-        return new Reservation(1L, 1L, new Reserver(name), new ReservationSlot(date, time, theme));
+        return new Reservation(1L, 1L, name, new ReservationSlot(date, time, theme));
     }
 }

@@ -87,8 +87,8 @@ class ReservationWaitingRepositoryTest {
         Theme theme2 = new Theme(2L, "테마 이름2", "테마 설명2", "썸네일2");
         Long memberId = insertMember("brown", "브라운");
         waitingRepository.insert(waiting("구구", new ReservationSlot(date, time1, theme1)));
-        waitingRepository.insert(new ReservationWaiting(null, memberId, new Reserver("브라운"), new ReservationSlot(date, time1, theme1)));
-        waitingRepository.insert(new ReservationWaiting(null, memberId, new Reserver("브라운"), new ReservationSlot(date.plusDays(1), time2, theme2)));
+        waitingRepository.insert(new ReservationWaiting(null, memberId, "브라운", new ReservationSlot(date, time1, theme1)));
+        waitingRepository.insert(new ReservationWaiting(null, memberId, "브라운", new ReservationSlot(date.plusDays(1), time2, theme2)));
 
         // when
         List<WaitingWithTurn> result = waitingRepository.findByMemberIdWithTurn(memberId);
@@ -165,7 +165,7 @@ class ReservationWaitingRepositoryTest {
         ReservationTime time = findTimeByStartAt("15:00");
         Theme theme = new Theme(1L, "테마 이름1", "테마 설명1", "썸네일1");
         ReservationSlot slot = new ReservationSlot(date, time, theme);
-        waitingRepository.insert(new ReservationWaiting(null, memberId, new Reserver(name), slot));
+        waitingRepository.insert(new ReservationWaiting(null, memberId, name, slot));
 
         // when
         boolean result = waitingRepository.existsByMemberIdAndSlot(memberId, slot);
@@ -181,7 +181,7 @@ class ReservationWaitingRepositoryTest {
         ReservationTime time = findTimeByStartAt("15:00");
         Theme theme = new Theme(1L, "테마 이름1", "테마 설명1", "썸네일1");
         ReservationSlot slot = new ReservationSlot(date, time, theme);
-        waitingRepository.insert(new ReservationWaiting(null, memberId, new Reserver("브라운"), slot));
+        waitingRepository.insert(new ReservationWaiting(null, memberId, "브라운", slot));
 
         // when
         boolean result = waitingRepository.existsByMemberIdAndSlot(memberId, slot);
@@ -199,7 +199,7 @@ class ReservationWaitingRepositoryTest {
         ReservationWaiting waiting = new ReservationWaiting(
                 null,
                 memberId,
-                new Reserver("브라운"),
+                "브라운",
                 new ReservationSlot(date, time, theme));
         waitingRepository.insert(waiting);
 
@@ -300,6 +300,6 @@ class ReservationWaitingRepositoryTest {
     }
 
     private ReservationWaiting waiting(String name, ReservationSlot slot) {
-        return new ReservationWaiting(null, insertMember("member" + memberSequence++, name), new Reserver(name), slot);
+        return new ReservationWaiting(null, insertMember("member" + memberSequence++, name), name, slot);
     }
 }

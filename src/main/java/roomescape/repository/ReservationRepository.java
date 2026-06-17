@@ -8,7 +8,6 @@ import org.springframework.stereotype.Repository;
 import roomescape.domain.Reservation;
 import roomescape.domain.ReservationSlot;
 import roomescape.domain.ReservationTime;
-import roomescape.domain.Reserver;
 import roomescape.domain.Theme;
 
 import java.sql.PreparedStatement;
@@ -38,7 +37,7 @@ public class ReservationRepository {
         return new Reservation(
                 resultSet.getLong("reservation_id"),
                 resultSet.getObject("member_id", Long.class),
-                new Reserver(resultSet.getString("username")),
+                resultSet.getString("username"),
                 slot
         );
     };

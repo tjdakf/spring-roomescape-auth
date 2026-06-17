@@ -556,12 +556,12 @@ class ReservationServiceTest {
         return new Reservation(
                 id,
                 1L,
-                new Reserver(name),
+                name,
                 new ReservationSlot(date, time, theme));
     }
 
     private ReservationWaiting waiting(Long id, String name, ReservationSlot slot) {
-        return new ReservationWaiting(id, 1L, new Reserver(name), slot);
+        return new ReservationWaiting(id, 1L, name, slot);
     }
 
     private ReservationTime time(Long id) {

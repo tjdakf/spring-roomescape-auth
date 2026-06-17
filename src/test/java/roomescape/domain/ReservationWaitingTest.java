@@ -23,13 +23,13 @@ class ReservationWaitingTest {
         // when & then
         assertThatThrownBy(() -> new ReservationWaiting(null, null, slot))
                 .isInstanceOf(IllegalArgumentException.class)
-                .hasMessage("reserver는 비어 있을 수 없습니다.");
+                .hasMessage("예약자 이름은 비어 있을 수 없습니다.");
     }
 
     @Test
     void 슬롯이_null이면_예외() {
         // when & then
-        assertThatThrownBy(() -> new ReservationWaiting(null, new Reserver("홍길동"), null))
+        assertThatThrownBy(() -> new ReservationWaiting(null, "홍길동", null))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("slot은 비어 있을 수 없습니다.");
     }
@@ -43,20 +43,21 @@ class ReservationWaitingTest {
         ReservationSlot slot = slot(date, time);
 
         // when
-        ReservationWaiting result = new ReservationWaiting(null, new Reserver(name), slot);
+        ReservationWaiting result = new ReservationWaiting(null, name, slot);
 
         // then
         assertThat(result.getName()).isEqualTo(name);
     }
 
     @Test
-    void 예약자_이름이_같은지_확인한다() {
+    void 예약_대기_소유자인지_확인한다() {
         // given
-        ReservationWaiting waiting = waiting("브라운", date, new ReservationTime(1L, startAt));
+        ReservationWaiting waiting = new ReservationWaiting(
+                1L, 10L, "브라운", slot(date, new ReservationTime(1L, startAt)));
 
         // when & then
-        assertThat(waiting.isOwnedBy(new Reserver("브라운"))).isTrue();
-        assertThat(waiting.isOwnedBy(new Reserver("구구"))).isFalse();
+        assertThat(waiting.isOwnedBy(10L)).isTrue();
+        assertThat(waiting.isOwnedBy(20L)).isFalse();
     }
 
     @Test
@@ -75,7 +76,7 @@ class ReservationWaitingTest {
     void 예약_대기를_예약으로_승격한다() {
         // given
         ReservationSlot slot = slot(date, new ReservationTime(1L, startAt));
-        ReservationWaiting waiting = new ReservationWaiting(1L, new Reserver("브라운"), slot);
+        ReservationWaiting waiting = new ReservationWaiting(1L, "브라운", slot);
 
         // when
         Reservation result = waiting.promoteToReservation();
@@ -87,7 +88,7 @@ class ReservationWaitingTest {
     }
 
     private ReservationWaiting waiting(String name, LocalDate date, ReservationTime time) {
-        return new ReservationWaiting(null, new Reserver(name), slot(date, time));
+        return new ReservationWaiting(null, name, slot(date, time));
     }
 
     private ReservationSlot slot(LocalDate date, ReservationTime time) {

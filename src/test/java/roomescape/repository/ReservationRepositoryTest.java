@@ -8,7 +8,6 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import roomescape.domain.Reservation;
 import roomescape.domain.ReservationSlot;
 import roomescape.domain.ReservationTime;
-import roomescape.domain.Reserver;
 import roomescape.domain.Theme;
 
 import java.time.LocalDate;
@@ -89,8 +88,8 @@ class ReservationRepositoryTest {
         Theme theme1 = new Theme(1L, "테마 이름1", "테마 설명1", "썸네일1");
         Theme theme2 = new Theme(2L, "테마 이름2", "테마 설명2", "썸네일2");
         Long memberId = insertMember("브라운");
-        reservationRepository.insert(new Reservation(null, memberId, new Reserver("브라운"), new ReservationSlot(date, time1, theme1)));
-        reservationRepository.insert(new Reservation(null, memberId, new Reserver("브라운"), new ReservationSlot(date.plusDays(1), time2, theme2)));
+        reservationRepository.insert(new Reservation(null, memberId, "브라운", new ReservationSlot(date, time1, theme1)));
+        reservationRepository.insert(new Reservation(null, memberId, "브라운", new ReservationSlot(date.plusDays(1), time2, theme2)));
         reservationRepository.insert(reservation("구구", new ReservationSlot(date, time2, theme2)));
 
         // when
@@ -137,7 +136,7 @@ class ReservationRepositoryTest {
         Long id = savedReservation.getId();
         LocalDate updateDate = date.plusDays(1);
 
-        Reservation updatedReservation = new Reservation(id, savedReservation.getMemberId(), new Reserver("브라운"), new ReservationSlot(updateDate, updateTime, theme));
+        Reservation updatedReservation = new Reservation(id, savedReservation.getMemberId(), "브라운", new ReservationSlot(updateDate, updateTime, theme));
 
         // when
         int updatedCount = reservationRepository.update(updatedReservation);
@@ -244,7 +243,7 @@ class ReservationRepositoryTest {
     }
 
     private Reservation reservation(String name, ReservationSlot slot) {
-        return new Reservation(null, insertMember(name), new Reserver(name), slot);
+        return new Reservation(null, insertMember(name), name, slot);
     }
 
     private Long insertMember(String name) {

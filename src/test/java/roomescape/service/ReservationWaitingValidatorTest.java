@@ -5,7 +5,6 @@ import org.junit.jupiter.api.Test;
 import roomescape.domain.ReservationSlot;
 import roomescape.domain.ReservationTime;
 import roomescape.domain.ReservationWaiting;
-import roomescape.domain.Reserver;
 import roomescape.domain.Theme;
 import roomescape.exception.ErrorCode;
 import roomescape.exception.RoomescapeException;
@@ -148,6 +147,6 @@ class ReservationWaitingValidatorTest {
     }
 
     private ReservationWaiting waiting(String name, LocalDate date) {
-        return new ReservationWaiting(1L, 1L, new Reserver(name), new ReservationSlot(date, time, theme));
+        return new ReservationWaiting(1L, 1L, name, new ReservationSlot(date, time, theme));
     }
 }

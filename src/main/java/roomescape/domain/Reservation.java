@@ -6,29 +6,25 @@ public class Reservation {
 
     private final Long id;
     private final Long memberId;
-    private final Reserver reserver;
+    private final String name;
     private final ReservationSlot slot;
 
-    public Reservation(Long id, Reserver reserver, ReservationSlot slot) {
-        this(id, null, reserver, slot);
+    public Reservation(Long id, String name, ReservationSlot slot) {
+        this(id, null, name, slot);
     }
 
-    public Reservation(Long id, Long memberId, Reserver reserver, ReservationSlot slot) {
-        validateReserver(reserver);
+    public Reservation(Long id, Long memberId, String name, ReservationSlot slot) {
+        validateName(name);
         validateSlot(slot);
 
         this.id = id;
         this.memberId = memberId;
-        this.reserver = reserver;
+        this.name = name;
         this.slot = slot;
     }
 
     public Reservation withId(Long id) {
-        return new Reservation(id, memberId, reserver, slot);
-    }
-
-    public boolean isOwnedBy(Reserver reserver) {
-        return this.reserver.equals(reserver);
+        return new Reservation(id, memberId, name, slot);
     }
 
     public boolean isOwnedBy(Long memberId) {
@@ -51,21 +47,17 @@ public class Reservation {
         return memberId;
     }
 
-    public Reserver getReserver() {
-        return reserver;
-    }
-
     public String getName() {
-        return reserver.getName();
+        return name;
     }
 
     public ReservationSlot getSlot() {
         return slot;
     }
 
-    private void validateReserver(Reserver reserver) {
-        if (reserver == null) {
-            throw new IllegalArgumentException("reserver는 비어 있을 수 없습니다.");
+    private void validateName(String name) {
+        if (name == null || name.isBlank()) {
+            throw new IllegalArgumentException("예약자 이름은 비어 있을 수 없습니다.");
         }
     }
 

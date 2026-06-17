@@ -8,7 +8,6 @@ import org.springframework.stereotype.Repository;
 import roomescape.domain.ReservationSlot;
 import roomescape.domain.ReservationTime;
 import roomescape.domain.ReservationWaiting;
-import roomescape.domain.Reserver;
 import roomescape.domain.Theme;
 import roomescape.domain.WaitingWithTurn;
 
@@ -39,7 +38,7 @@ public class ReservationWaitingRepository {
         return new ReservationWaiting(
                 resultSet.getLong("reservation_waiting_id"),
                 resultSet.getObject("member_id", Long.class),
-                new Reserver(resultSet.getString("username")),
+                resultSet.getString("username"),
                 slot
         );
     };

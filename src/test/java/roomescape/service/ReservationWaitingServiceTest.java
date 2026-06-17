@@ -309,6 +309,6 @@ class ReservationWaitingServiceTest {
     }
 
     private ReservationWaiting waiting(Long id, String name, LocalDate date) {
-        return new ReservationWaiting(id, 1L, new Reserver(name), new ReservationSlot(date, time, theme));
+        return new ReservationWaiting(id, 1L, name, new ReservationSlot(date, time, theme));
     }
 }

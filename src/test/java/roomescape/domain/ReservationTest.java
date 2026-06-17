@@ -24,13 +24,13 @@ class ReservationTest {
         // when & then
         assertThatThrownBy(() -> new Reservation(null, null, slot))
                 .isInstanceOf(IllegalArgumentException.class)
-                .hasMessage("reserver는 비어 있을 수 없습니다.");
+                .hasMessage("예약자 이름은 비어 있을 수 없습니다.");
     }
 
     @Test
     void 슬롯이_null이면_예외() {
         // when & then
-        assertThatThrownBy(() -> new Reservation(null, new Reserver("홍길동"), null))
+        assertThatThrownBy(() -> new Reservation(null, "홍길동", null))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("slot은 비어 있을 수 없습니다.");
     }
@@ -44,20 +44,21 @@ class ReservationTest {
         ReservationSlot slot = slot(date, time);
 
         // when
-        Reservation result = new Reservation(null, new Reserver(name), slot);
+        Reservation result = new Reservation(null, name, slot);
 
         // then
         assertThat(result.getName()).isEqualTo(name);
     }
 
     @Test
-    void 예약자_이름이_같은지_확인한다() {
+    void 예약_소유자인지_확인한다() {
         // given
-        Reservation reservation = reservation("브라운", date, new ReservationTime(1L, startAt));
+        Reservation reservation = new Reservation(
+                1L, 10L, "브라운", slot(date, new ReservationTime(1L, startAt)));
 
         // when & then
-        assertThat(reservation.isOwnedBy(new Reserver("브라운"))).isTrue();
-        assertThat(reservation.isOwnedBy(new Reserver("구구"))).isFalse();
+        assertThat(reservation.isOwnedBy(10L)).isTrue();
+        assertThat(reservation.isOwnedBy(20L)).isFalse();
     }
 
     @Test
@@ -86,7 +87,7 @@ class ReservationTest {
     }
 
     private Reservation reservation(String name, LocalDate date, ReservationTime time) {
-        return new Reservation(null, new Reserver(name), slot(date, time));
+        return new Reservation(null, name, slot(date, time));
     }
 
     private ReservationSlot slot(LocalDate date, ReservationTime time) {

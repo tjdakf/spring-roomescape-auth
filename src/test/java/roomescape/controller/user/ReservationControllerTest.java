@@ -13,7 +13,6 @@ import roomescape.auth.SessionConstants;
 import roomescape.domain.Reservation;
 import roomescape.domain.ReservationSlot;
 import roomescape.domain.ReservationTime;
-import roomescape.domain.Reserver;
 import roomescape.domain.Theme;
 import roomescape.domain.member.Member;
 import roomescape.service.AuthService;
@@ -302,13 +301,13 @@ class ReservationControllerTest {
     private Reservation reservation() {
         ReservationTime time = new ReservationTime(1L, LocalTime.of(10, 0));
         Theme theme = new Theme(1L, "테마", "설명", "썸네일");
-        return new Reservation(1L, new Reserver("브라운"), new ReservationSlot(LocalDate.of(2099, 1, 1), time, theme));
+        return new Reservation(1L, "브라운", new ReservationSlot(LocalDate.of(2099, 1, 1), time, theme));
     }
 
     private Reservation updatedReservation() {
         ReservationTime time = new ReservationTime(2L, LocalTime.of(12, 0));
         Theme theme = new Theme(1L, "테마", "설명", "썸네일");
-        return new Reservation(1L, new Reserver("브라운"), new ReservationSlot(LocalDate.of(2099, 1, 2), time, theme));
+        return new Reservation(1L, "브라운", new ReservationSlot(LocalDate.of(2099, 1, 2), time, theme));
     }
 
     private RequestPostProcessor loginMember() {

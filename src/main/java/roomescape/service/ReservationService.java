@@ -7,7 +7,6 @@ import roomescape.domain.Reservation;
 import roomescape.domain.ReservationSlot;
 import roomescape.domain.ReservationTime;
 import roomescape.domain.ReservationWaiting;
-import roomescape.domain.Reserver;
 import roomescape.domain.Theme;
 import roomescape.domain.member.Member;
 import roomescape.exception.ErrorCode;
@@ -63,7 +62,7 @@ public class ReservationService {
     @Transactional
     public Reservation createByUser(Long memberId, String name, LocalDate date, Long timeId, Long themeId, LocalDateTime now) {
         ReservationSlot slot = new ReservationSlot(date, findReservationTime(timeId), findTheme(themeId));
-        Reservation reservation = new Reservation(null, memberId, new Reserver(name), slot);
+        Reservation reservation = new Reservation(null, memberId, name, slot);
         reservationValidator.validateCreatableByUser(reservation, now);
 
         return insertReservation(reservation);
@@ -73,7 +72,7 @@ public class ReservationService {
     public Reservation createByAdmin(Long memberId, LocalDate date, Long timeId, Long themeId) {
         Member member = memberService.findByMemberId(memberId);
         ReservationSlot slot = new ReservationSlot(date, findReservationTime(timeId), findTheme(themeId));
-        Reservation reservation = new Reservation(null, member.getMemberId(), new Reserver(member.getName()), slot);
+        Reservation reservation = new Reservation(null, member.getMemberId(), member.getName(), slot);
         reservationValidator.validateCreatableByAdmin(reservation);
 
         return insertReservation(reservation);
@@ -144,7 +143,7 @@ public class ReservationService {
         return new Reservation(
                 reservation.getId(),
                 reservation.getMemberId(),
-                reservation.getReserver(),
+                reservation.getName(),
                 new ReservationSlot(
                         resolveUpdateDate(originalSlot.getDate(), updateDate),
                         resolveUpdateTime(originalSlot.getTime(), updateTimeId),
