@@ -3,7 +3,7 @@
 |-----------------|------------------------------------------------|----------------------------------|--------------------------------------------------------------|-------|
 | 회원가입           | POST `/members`                                | `{loginId, password, name}`      | `{loginId}`                                                   | 201   |
 | 로그인             | POST `/login`                                  | `{loginId, password}`            | —                                                            | 200   |
-| 현재 로그인 사용자 조회 | GET `/me`                                      | —                                | `{name}`                                                     | 200   |
+| 현재 로그인 사용자 조회 | GET `/me`                                      | —                                | `{name, role}`                                               | 200   |
 | 로그아웃            | POST `/logout`                                 | —                                | —                                                            | 204   |
 | 사용자 예약 등록       | POST `/reservations`                           | `{date, timeId, themeId}`        | `{id, name, date, time: {id, startAt}, theme: {id, name}}`   | 201   |
 | 사용자 본인 예약 조회    | GET `/reservations`                            | —                                | `[{id, name, date, time: {id, startAt}, theme: {id, name}}, ...]` | 200   |
@@ -15,7 +15,8 @@
 | 사용자 본인 예약 대기 취소 | DELETE `/waitings/{id}`                       | —                                | —                                                            | 204   |
 | 관리자 예약 조회       | GET `/admin/reservations`                      | —                                | `[{id, name, date, time: {id, startAt}, theme: {id, name}}, ...]` | 200   |
 | 관리자 예약 상태 조회    | GET `/admin/reservation-statuses?startDate=2026-06-01&endDate=2026-06-30` | —                                | `[{id, name, date, time: {id, startAt}, theme: {id, name}, status, turn}, ...]` | 200   |
-| 관리자 회원 조회       | GET `/admin/members`                           | —                                | `[{memberId, loginId, name}, ...]`                            | 200   |
+| 관리자 회원 조회       | GET `/admin/members`                           | —                                | `[{memberId, loginId, name, role}, ...]`                      | 200   |
+| 관리자 회원 등급 변경    | PATCH `/admin/members/{memberId}/role`          | `{role}`                         | `{memberId, loginId, name, role}`                            | 200   |
 | 관리자 예약 등록       | POST `/admin/reservations`                     | `{memberId, date, timeId, themeId}` | `{id, name, date, time: {id, startAt}, theme: {id, name}}` | 201   |
 | 관리자 예약 삭제       | DELETE `/admin/reservations/{id}`              | —                                | —                                                            | 204   |
 | 관리자 시간 조회       | GET `/admin/times`                             | —                                | `[{id, startAt}, ...]`                                       | 200   |
@@ -58,6 +59,8 @@
 | INVALID_INPUT | startAt은 비어 있을 수 없습니다. | 400 | 예약 시간 생성 요청의 시작 시간이 누락됨 |
 | INVALID_INPUT | description은 255자를 넘을 수 없습니다. | 400 | 테마 설명 길이가 허용 범위를 초과함 |
 | INVALID_INPUT | thumbnail은 255자를 넘을 수 없습니다. | 400 | 테마 썸네일 경로 길이가 허용 범위를 초과함 |
+| INVALID_INPUT | role은 비어 있을 수 없습니다. | 400 | 회원 등급 변경 요청의 role이 누락됨 |
+| INVALID_INPUT | ADMIN 권한은 부여할 수 없습니다. | 400 | 회원 등급 변경 요청에서 ADMIN 권한 부여를 시도함 |
 | INVALID_INPUT | id는 양수이어야 합니다. | 400 | 경로 변수 ID 값이 양수가 아님 |
 | INVALID_INPUT | 요청 본문 형식이 올바르지 않습니다. | 400 | JSON 형식이 잘못됐거나 요청 본문 타입 변환에 실패함 |
 | INVALID_INPUT | date 형식이 올바르지 않습니다. | 400 | 요청 파라미터의 날짜 형식이 올바르지 않음 |
@@ -70,7 +73,9 @@
 | PAST_SCHEDULE | 이미 지난 시간으로는 예약 대기를 신청할 수 없습니다. | 400 | 사용자가 지난 날짜·시간으로 예약 대기 생성을 요청함 |
 | FORBIDDEN_RESOURCE | 본인의 예약만 변경하거나 취소할 수 있습니다. | 403 | 예약은 존재하지만 로그인 사용자와 예약 소유자가 일치하지 않음 |
 | FORBIDDEN_RESOURCE | 본인의 예약 대기만 취소할 수 있습니다. | 403 | 예약 대기는 존재하지만 로그인 사용자와 예약 대기 소유자가 일치하지 않음 |
-| FORBIDDEN_RESOURCE | 관리자 권한이 필요합니다. | 403 | 관리자가 아닌 사용자가 관리자 API에 접근함 |
+| FORBIDDEN_RESOURCE | 관리자 또는 매니저는 사용자 예약을 신청할 수 없습니다. | 403 | ADMIN 또는 MANAGER가 사용자 예약·대기 생성을 요청함 |
+| FORBIDDEN_RESOURCE | 관리자 권한이 필요합니다. | 403 | ADMIN 또는 MANAGER가 아닌 사용자가 관리자 API에 접근함 |
+| FORBIDDEN_RESOURCE | 관리자만 회원 등급을 변경할 수 있습니다. | 403 | ADMIN이 아닌 사용자가 회원 등급 변경을 요청함 |
 | UNAUTHORIZED | 인증에 실패했습니다. | 401 | 로그인하지 않은 사용자가 현재 로그인 사용자 조회를 요청함 |
 | UNAUTHORIZED | 아이디 또는 비밀번호가 올바르지 않습니다. | 401 | 로그인 ID가 존재하지 않거나 비밀번호가 일치하지 않음 |
 | NOT_FOUND | 존재하지 않는 예약 시간입니다. | 404 | 존재하지 않는 예약 시간 ID로 요청함 |
@@ -138,7 +143,7 @@
   - `GET /me` 요청을 받음
   - 세션의 `loginMemberId`로 현재 로그인 사용자를 조회
   - 로그인 상태이면 사용자 정보 반환
-  - 응답 DTO로 `name`을 반환
+  - 응답 DTO로 `name`, `role`을 반환
   - 로그인 상태가 아니면 `401 Unauthorized` 반환
   - 홈 화면에서는 이 API를 통해 로그인 여부를 판단할 수 있음
 
@@ -210,5 +215,13 @@
 - [x] 관리자 role과 관리자 인가 추가
   - `member` 테이블에 `role` 추가
   - 기본 admin 계정 추가
-  - 관리자 API 접근 권한 분리 (`/admin/**`은 ADMIN 권한 로그인 사용자만 접근)
-  - 로그인 시 세션에 role 저장, `AdminAuthInterceptor`로 인가 처리
+  - 관리자 API 접근 권한 분리 (`/admin/**`은 ADMIN 또는 MANAGER 권한 로그인 사용자만 접근)
+  - 로그인 시 세션에 role 저장
+  - 관리자 페이지 요청은 로그인 페이지로 리다이렉트하고, 관리자 API 요청은 에러 응답으로 처리
+
+### 관리자 회원 등급 변경
+- [x] 관리자 회원 등급 변경 기능 추가
+  - `PATCH /admin/members/{memberId}/role` 추가
+  - ADMIN 권한 사용자만 회원 등급 변경 가능
+  - API로는 USER 또는 MANAGER만 부여 가능
+  - 회원 목록과 현재 로그인 사용자 조회 응답에 role 포함
