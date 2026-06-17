@@ -95,4 +95,18 @@ class AuthControllerTest {
 
         verifyNoMoreInteractions(authService);
     }
+
+    @Test
+    void 로그아웃을_한다() throws Exception {
+        mockMvc.perform(post("/logout")
+                        .sessionAttr("loginMemberId", 1L))
+                .andExpect(status().isNoContent())
+                .andExpect(request().sessionAttributeDoesNotExist("loginMemberId"));
+    }
+
+    @Test
+    void 세션이_없어도_로그아웃은_성공한다() throws Exception {
+        mockMvc.perform(post("/logout"))
+                .andExpect(status().isNoContent());
+    }
 }

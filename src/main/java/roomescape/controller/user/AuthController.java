@@ -48,4 +48,13 @@ public class AuthController {
         Member member = authService.findLoginMember(memberId);
         return ResponseEntity.ok(LoginMemberResponse.from(member));
     }
+
+    @PostMapping("/logout")
+    public ResponseEntity<Void> logout(HttpServletRequest httpServletRequest) {
+        HttpSession session = httpServletRequest.getSession(false);
+        if (session != null) {
+            session.invalidate();
+        }
+        return ResponseEntity.noContent().build();
+    }
 }
