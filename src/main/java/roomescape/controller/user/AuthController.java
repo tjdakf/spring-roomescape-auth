@@ -4,22 +4,26 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 import roomescape.controller.dto.request.LoginRequest;
+import roomescape.controller.dto.response.LoginMemberResponse;
 import roomescape.domain.member.Member;
-import roomescape.service.LoginService;
+import roomescape.exception.ErrorCode;
+import roomescape.exception.RoomescapeException;
+import roomescape.service.AuthService;
 
 @RestController
 public class AuthController {
 
     private static final String LOGIN_MEMBER_ID = "loginMemberId";
 
-    private final LoginService loginService;
+    private final AuthService authService;
 
-    public AuthController(LoginService loginService) {
-        this.loginService = loginService;
+    public AuthController(AuthService authService) {
+        this.authService = authService;
     }
 
     @PostMapping("/login")
@@ -27,9 +31,21 @@ public class AuthController {
             @Valid @RequestBody LoginRequest request,
             HttpServletRequest httpServletRequest
     ) {
-        Member member = loginService.login(request.loginId(), request.password());
+        Member member = authService.login(request.loginId(), request.password());
         HttpSession session = httpServletRequest.getSession();
         session.setAttribute(LOGIN_MEMBER_ID, member.getMemberId());
         return ResponseEntity.ok().build();
+    }
+
+    @GetMapping("/me")
+    public ResponseEntity<LoginMemberResponse> getLoginMember(HttpServletRequest httpServletRequest) {
+        HttpSession session = httpServletRequest.getSession(false);
+        if (session == null || session.getAttribute(LOGIN_MEMBER_ID) == null) {
+            throw new RoomescapeException(ErrorCode.UNAUTHORIZED);
+        }
+
+        Long memberId = (Long) session.getAttribute(LOGIN_MEMBER_ID);
+        Member member = authService.findLoginMember(memberId);
+        return ResponseEntity.ok(LoginMemberResponse.from(member));
     }
 }

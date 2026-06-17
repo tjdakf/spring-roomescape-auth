@@ -12,10 +12,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.*;
 
-class LoginServiceTest {
+class AuthServiceTest {
 
     private final MemberRepository memberRepository = mock();
-    private final LoginService loginService = new LoginService(memberRepository);
+    private final AuthService authService = new AuthService(memberRepository);
 
     @Test
     void 로그인_성공() {
@@ -25,7 +25,7 @@ class LoginServiceTest {
                 .thenReturn(Optional.of(member));
 
         // when
-        Member result = loginService.login("gugu", "password");
+        Member result = authService.login("gugu", "password");
 
         // then
         assertThat(result).isEqualTo(member);
@@ -40,7 +40,7 @@ class LoginServiceTest {
                 .thenReturn(Optional.empty());
 
         // when & then
-        assertThatThrownBy(() -> loginService.login("unknown", "password"))
+        assertThatThrownBy(() -> authService.login("unknown", "password"))
                 .isInstanceOf(RoomescapeException.class)
                 .hasFieldOrPropertyWithValue("errorCode", ErrorCode.UNAUTHORIZED)
                 .hasMessage("아이디 또는 비밀번호가 올바르지 않습니다.");
@@ -56,12 +56,43 @@ class LoginServiceTest {
                 .thenReturn(Optional.of(new Member(1L, "gugu", "password", "구구")));
 
         // when & then
-        assertThatThrownBy(() -> loginService.login("gugu", "wrong-password"))
+        assertThatThrownBy(() -> authService.login("gugu", "wrong-password"))
                 .isInstanceOf(RoomescapeException.class)
                 .hasFieldOrPropertyWithValue("errorCode", ErrorCode.UNAUTHORIZED)
                 .hasMessage("아이디 또는 비밀번호가 올바르지 않습니다.");
 
         verify(memberRepository, times(1)).findByLoginId("gugu");
+        verifyNoMoreInteractions(memberRepository);
+    }
+
+    @Test
+    void 로그인_회원을_조회한다() {
+        // given
+        Member member = new Member(1L, "gugu", "password", "구구");
+        when(memberRepository.findByMemberId(1L))
+                .thenReturn(Optional.of(member));
+
+        // when
+        Member result = authService.findLoginMember(1L);
+
+        // then
+        assertThat(result).isEqualTo(member);
+        verify(memberRepository, times(1)).findByMemberId(1L);
+        verifyNoMoreInteractions(memberRepository);
+    }
+
+    @Test
+    void 로그인_회원이_존재하지_않으면_예외() {
+        // given
+        when(memberRepository.findByMemberId(1L))
+                .thenReturn(Optional.empty());
+
+        // when & then
+        assertThatThrownBy(() -> authService.findLoginMember(1L))
+                .isInstanceOf(RoomescapeException.class)
+                .hasFieldOrPropertyWithValue("errorCode", ErrorCode.UNAUTHORIZED);
+
+        verify(memberRepository, times(1)).findByMemberId(1L);
         verifyNoMoreInteractions(memberRepository);
     }
 }

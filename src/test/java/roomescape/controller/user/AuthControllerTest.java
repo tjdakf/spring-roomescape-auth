@@ -9,10 +9,11 @@ import org.springframework.test.web.servlet.MockMvc;
 import roomescape.domain.member.Member;
 import roomescape.exception.ErrorCode;
 import roomescape.exception.RoomescapeException;
-import roomescape.service.LoginService;
+import roomescape.service.AuthService;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -23,11 +24,11 @@ class AuthControllerTest {
     private MockMvc mockMvc;
 
     @MockitoBean
-    private LoginService loginService;
+    private AuthService authService;
 
     @Test
     void 로그인_성공시_세션에_회원_id를_저장한다() throws Exception {
-        when(loginService.login(any(), any()))
+        when(authService.login(any(), any()))
                 .thenReturn(new Member(1L, "gugu", "password", "구구"));
 
         mockMvc.perform(post("/login")
@@ -55,12 +56,12 @@ class AuthControllerTest {
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.code").value("INVALID_INPUT"));
 
-        verifyNoInteractions(loginService);
+        verifyNoInteractions(authService);
     }
 
     @Test
     void 로그인_실패시_에러_응답() throws Exception {
-        when(loginService.login(any(), any()))
+        when(authService.login(any(), any()))
                 .thenThrow(new RoomescapeException(ErrorCode.UNAUTHORIZED, "아이디 또는 비밀번호가 올바르지 않습니다."));
 
         mockMvc.perform(post("/login")
@@ -73,5 +74,25 @@ class AuthControllerTest {
                                 """))
                 .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("$.code").value("UNAUTHORIZED"));
+    }
+
+    @Test
+    void 현재_로그인_사용자를_조회한다() throws Exception {
+        when(authService.findLoginMember(1L))
+                .thenReturn(new Member(1L, "gugu", "password", "구구"));
+
+        mockMvc.perform(get("/me")
+                        .sessionAttr("loginMemberId", 1L))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.name").value("구구"));
+    }
+
+    @Test
+    void 현재_로그인_사용자_조회시_세션이_없으면_에러_응답() throws Exception {
+        mockMvc.perform(get("/me"))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.code").value("UNAUTHORIZED"));
+
+        verifyNoMoreInteractions(authService);
     }
 }
