@@ -5,17 +5,18 @@
 | 로그인             | POST `/login`                                  | `{loginId, password}`            | —                                                            | 200   |
 | 현재 로그인 사용자 조회 | GET `/me`                                      | —                                | `{name}`                                                     | 200   |
 | 로그아웃            | POST `/logout`                                 | —                                | —                                                            | 204   |
-| 사용자 예약 등록       | POST `/reservations`                           | `{name, date, timeId, themeId}`  | `{id, name, date, time: {id, startAt}, theme: {id, name}}`   | 201   |
-| 사용자 본인 예약 조회    | GET `/reservations?name=브라운`                 | —                                | `[{id, name, date, time: {id, startAt}, theme: {id, name}}, ...]` | 200   |
-| 사용자 본인 예약 상태 조회 | GET `/reservation-statuses?name=브라운`         | —                                | `[{id, name, date, time: {id, startAt}, theme: {id, name}, status, turn}, ...]` | 200   |
-| 사용자 본인 예약 변경    | PUT `/reservations/{id}`                       | `{name, date?, timeId?}`         | `{id, name, date, time: {id, startAt}, theme: {id, name}}`   | 200   |
-| 사용자 본인 예약 취소    | DELETE `/reservations/{id}?name=브라운`          | —                                | —                                                            | 204   |
-| 사용자 예약 대기 등록    | POST `/waitings`                               | `{name, date, timeId, themeId}`  | `{id, name, date, time: {id, startAt}, theme: {id, name}, turn}` | 201   |
-| 사용자 본인 예약 대기 조회 | GET `/waitings?name=브라운`                    | —                                | `[{id, name, date, time: {id, startAt}, theme: {id, name}, turn}, ...]` | 200   |
-| 사용자 본인 예약 대기 취소 | DELETE `/waitings/{id}?name=브라운`             | —                                | —                                                            | 204   |
+| 사용자 예약 등록       | POST `/reservations`                           | `{date, timeId, themeId}`        | `{id, name, date, time: {id, startAt}, theme: {id, name}}`   | 201   |
+| 사용자 본인 예약 조회    | GET `/reservations`                            | —                                | `[{id, name, date, time: {id, startAt}, theme: {id, name}}, ...]` | 200   |
+| 사용자 본인 예약 상태 조회 | GET `/reservation-statuses`                     | —                                | `[{id, name, date, time: {id, startAt}, theme: {id, name}, status, turn}, ...]` | 200   |
+| 사용자 본인 예약 변경    | PUT `/reservations/{id}`                       | `{date?, timeId?}`               | `{id, name, date, time: {id, startAt}, theme: {id, name}}`   | 200   |
+| 사용자 본인 예약 취소    | DELETE `/reservations/{id}`                    | —                                | —                                                            | 204   |
+| 사용자 예약 대기 등록    | POST `/waitings`                               | `{date, timeId, themeId}`        | `{id, name, date, time: {id, startAt}, theme: {id, name}, turn}` | 201   |
+| 사용자 본인 예약 대기 조회 | GET `/waitings`                                | —                                | `[{id, name, date, time: {id, startAt}, theme: {id, name}, turn}, ...]` | 200   |
+| 사용자 본인 예약 대기 취소 | DELETE `/waitings/{id}`                       | —                                | —                                                            | 204   |
 | 관리자 예약 조회       | GET `/admin/reservations`                      | —                                | `[{id, name, date, time: {id, startAt}, theme: {id, name}}, ...]` | 200   |
 | 관리자 예약 상태 조회    | GET `/admin/reservation-statuses?startDate=2026-06-01&endDate=2026-06-30` | —                                | `[{id, name, date, time: {id, startAt}, theme: {id, name}, status, turn}, ...]` | 200   |
-| 관리자 예약 등록       | POST `/admin/reservations`                     | `{name, date, timeId, themeId}`  | `{id, name, date, time: {id, startAt}, theme: {id, name}}`   | 201   |
+| 관리자 회원 조회       | GET `/admin/members`                           | —                                | `[{memberId, loginId, name}, ...]`                            | 200   |
+| 관리자 예약 등록       | POST `/admin/reservations`                     | `{memberId, date, timeId, themeId}` | `{id, name, date, time: {id, startAt}, theme: {id, name}}` | 201   |
 | 관리자 예약 삭제       | DELETE `/admin/reservations/{id}`              | —                                | —                                                            | 204   |
 | 관리자 시간 조회       | GET `/admin/times`                             | —                                | `[{id, startAt}, ...]`                                       | 200   |
 | 관리자 시간 등록       | POST `/admin/times`                            | `{startAt}`                      | `{id, startAt}`                                              | 201   |
@@ -48,6 +49,8 @@
 | INVALID_INPUT | loginId는 255자를 넘을 수 없습니다. | 400 | 회원가입 요청의 로그인 ID 길이가 허용 범위를 초과함 |
 | INVALID_INPUT | password는 비어 있을 수 없습니다. | 400 | 회원가입 요청의 비밀번호가 비어 있음 |
 | INVALID_INPUT | password는 255자를 넘을 수 없습니다. | 400 | 회원가입 요청의 비밀번호 길이가 허용 범위를 초과함 |
+| INVALID_INPUT | memberId는 비어 있을 수 없습니다. | 400 | 관리자 예약 생성 요청의 회원 ID가 누락됨 |
+| INVALID_INPUT | memberId는 양수이어야 합니다. | 400 | 관리자 예약 생성 요청의 회원 ID가 양수가 아님 |
 | INVALID_INPUT | timeId는 비어 있을 수 없습니다. | 400 | 요청 본문의 필수 ID 값이 누락됨 |
 | INVALID_INPUT | timeId는 양수이어야 합니다. | 400 | 요청 본문의 ID 값이 양수가 아님 |
 | INVALID_INPUT | themeId는 비어 있을 수 없습니다. | 400 | 요청 본문의 필수 ID 값이 누락됨 |
@@ -61,13 +64,12 @@
 | INVALID_INPUT | id 형식이 올바르지 않습니다. | 400 | 경로 변수 ID 형식이 올바르지 않음 |
 | INVALID_INPUT | date는 필수입니다. | 400 | 예약 가능 시간 조회 요청의 date 파라미터가 누락됨 |
 | INVALID_INPUT | date는 비어 있을 수 없습니다. | 400 | 예약 생성 요청의 date 값이 누락됨 |
-| INVALID_INPUT | name는 필수입니다. | 400 | 내 예약·대기 조회 또는 취소 요청의 이름 파라미터가 누락됨 |
 | INVALID_INPUT | 변경할 날짜 또는 시간이 필요합니다. | 400 | 예약 변경 요청에 날짜와 시간 ID가 모두 누락됨 |
 | INVALID_INPUT | 예약 가능한 시간에는 대기를 신청할 수 없습니다. | 400 | 아직 예약되지 않은 날짜·시간·테마에 대기 신청을 요청함 |
 | PAST_SCHEDULE | 이미 지난 시간으로는 예약할 수 없습니다. | 400 | 사용자가 지난 날짜·시간으로 예약 생성·변경을 요청함 |
 | PAST_SCHEDULE | 이미 지난 시간으로는 예약 대기를 신청할 수 없습니다. | 400 | 사용자가 지난 날짜·시간으로 예약 대기 생성을 요청함 |
-| FORBIDDEN_RESOURCE | 본인의 예약만 변경하거나 취소할 수 있습니다. | 403 | 예약은 존재하지만 요청 이름과 예약 이름이 일치하지 않음 |
-| FORBIDDEN_RESOURCE | 본인의 예약 대기만 취소할 수 있습니다. | 403 | 예약 대기는 존재하지만 요청 이름과 예약 대기 이름이 일치하지 않음 |
+| FORBIDDEN_RESOURCE | 본인의 예약만 변경하거나 취소할 수 있습니다. | 403 | 예약은 존재하지만 로그인 사용자와 예약 소유자가 일치하지 않음 |
+| FORBIDDEN_RESOURCE | 본인의 예약 대기만 취소할 수 있습니다. | 403 | 예약 대기는 존재하지만 로그인 사용자와 예약 대기 소유자가 일치하지 않음 |
 | UNAUTHORIZED | 인증에 실패했습니다. | 401 | 로그인하지 않은 사용자가 현재 로그인 사용자 조회를 요청함 |
 | UNAUTHORIZED | 아이디 또는 비밀번호가 올바르지 않습니다. | 401 | 로그인 ID가 존재하지 않거나 비밀번호가 일치하지 않음 |
 | NOT_FOUND | 존재하지 않는 예약 시간입니다. | 404 | 존재하지 않는 예약 시간 ID로 요청함 |
@@ -75,6 +77,7 @@
 | NOT_FOUND | 존재하지 않는 테마입니다. | 404 | 존재하지 않는 테마 ID로 요청함 |
 | NOT_FOUND | 존재하지 않는 예약입니다. | 404 | 존재하지 않는 예약 ID로 변경·취소를 요청함 |
 | NOT_FOUND | 존재하지 않는 예약 대기입니다. | 404 | 존재하지 않는 예약 대기 ID로 취소를 요청함 |
+| NOT_FOUND | 존재하지 않는 회원입니다. | 404 | 관리자 예약 생성 요청의 회원 ID가 존재하지 않음 |
 | NOT_FOUND | 존재하지 않는 리소스입니다. | 404 | 존재하지 않는 URL로 요청함 |
 | DUPLICATE_RESOURCE | 이미 예약된 시간입니다. | 409 | 같은 날짜·시간·테마에 이미 다른 예약이 존재함 |
 | DUPLICATE_RESOURCE | 이미 예약 대기를 신청한 시간입니다. | 409 | 같은 사용자가 같은 날짜·시간·테마에 중복 대기를 요청함 |
@@ -172,21 +175,30 @@
   - 회원가입/로그인이 DB 회원 기준으로 동작하도록 변경
 
 ### 예약 소유자 memberId 전환
-- [ ] 예약의 소유자 기준을 `name`에서 `memberId`로 변경
+- [x] 예약의 소유자 기준을 `name`에서 `memberId`로 변경
   - `reservation` 테이블에 `member_id` 추가
+  - `reservation` 테이블의 `name` 컬럼 제거
   - 예약 생성, 조회, 변경, 취소에서 로그인 사용자의 `memberId` 사용
   - 예약 응답의 `name`은 회원 정보 기준으로 제공
+  - 관리자 예약 생성도 기존 회원의 `memberId` 기준으로 처리
 
 ### 예약 대기 소유자 memberId 전환
-- [ ] 예약 대기의 소유자 기준을 `name`에서 `memberId`로 변경
+- [x] 예약 대기의 소유자 기준을 `name`에서 `memberId`로 변경
   - `reservation_waiting` 테이블에 `member_id` 추가
+  - `reservation_waiting` 테이블의 `name` 컬럼 제거
   - 대기 생성, 조회, 취소에서 로그인 사용자의 `memberId` 사용
   - 중복 대기 여부도 `memberId` 기준으로 판단
 
 ### 통합 시나리오 정리
-- [ ] 로그인 사용자 기준 예약/대기 시나리오 정리
+- [x] 로그인 사용자 기준 예약/대기 시나리오 정리
   - 회원가입, 로그인, 예약, 대기 흐름이 로그인 사용자 기준으로 이어지도록 정리
   - 기존 `name` 요청 파라미터나 요청 본문 의존 제거
+
+### 관리자 회원 조회
+- [x] 관리자에서 예약 대상 회원을 조회할 수 있도록 추가
+  - `GET /admin/members` 추가
+  - 관리자 예약 생성 요청에서 `memberId` 사용
+  - 가입하지 않은 손님 예약은 생성하지 않음
 
 ### 관리자 계정과 권한 준비
 - [ ] 관리자 권한 도입 전 계정 구조 준비
